@@ -66,16 +66,12 @@ def test_user_profile_invalid_state() -> None:
 
 def test_user_profile_naive_created_at_rejected() -> None:
     with pytest.raises(ValidationError):
-        UserProfile(
-            **_valid_profile(created_at=datetime(2025, 1, 1))  # naive
-        )
+        UserProfile(**_valid_profile(created_at=datetime(2025, 1, 1)))  # naive
 
 
 def test_user_profile_naive_last_active_rejected() -> None:
     with pytest.raises(ValidationError):
-        UserProfile(
-            **_valid_profile(last_active=datetime(2025, 1, 1))  # naive
-        )
+        UserProfile(**_valid_profile(last_active=datetime(2025, 1, 1)))  # naive
 
 
 def test_user_profile_is_frozen() -> None:
