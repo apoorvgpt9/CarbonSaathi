@@ -1,5 +1,7 @@
 # CarbonSaathi 🌱
 
+[![CI](https://github.com/apoorvgpt9/carbonsaathi/actions/workflows/ci.yml/badge.svg)](https://github.com/apoorvgpt9/carbonsaathi/actions/workflows/ci.yml)
+
 > Your carbon companion, not your carbon scolder.
 
 A personal AI companion that helps Indian metro professionals track and reduce their everyday carbon footprint through natural-language activity logging, state-aware emission calculation, and visible AI reasoning.
