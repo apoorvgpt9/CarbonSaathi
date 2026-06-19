@@ -26,7 +26,9 @@ def _enforce_utc(value: datetime) -> datetime:
         ValueError: If ``value`` has no timezone information (naive datetime).
     """
     if value.tzinfo is None:
-        raise ValueError("datetime must be timezone-aware; pass a UTC datetime or one with explicit tzinfo")
+        raise ValueError(
+            "datetime must be timezone-aware; pass a UTC datetime or one with explicit tzinfo"
+        )
     return value.astimezone(UTC)
 
 

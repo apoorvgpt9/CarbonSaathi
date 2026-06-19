@@ -140,7 +140,10 @@ class FirestoreService:
             The Firestore document ID (equal to ``activity.id``).
         """
         doc_ref = (
-            self._client.collection("users").document(activity.user_id).collection("activities").document(activity.id)
+            self._client.collection("users")
+            .document(activity.user_id)
+            .collection("activities")
+            .document(activity.id)
         )
         await doc_ref.set(activity.model_dump(mode="json"))
         return activity.id
@@ -187,7 +190,12 @@ class FirestoreService:
         Returns:
             The Firestore document ID (equal to ``insight.id``).
         """
-        doc_ref = self._client.collection("users").document(insight.user_id).collection("insights").document(insight.id)
+        doc_ref = (
+            self._client.collection("users")
+            .document(insight.user_id)
+            .collection("insights")
+            .document(insight.id)
+        )
         await doc_ref.set(insight.model_dump(mode="json"))
         return insight.id
 
@@ -228,7 +236,12 @@ class FirestoreService:
         Returns:
             The Firestore document ID (equal to ``rec.id``).
         """
-        doc_ref = self._client.collection("users").document(rec.user_id).collection("recommendations").document(rec.id)
+        doc_ref = (
+            self._client.collection("users")
+            .document(rec.user_id)
+            .collection("recommendations")
+            .document(rec.id)
+        )
         await doc_ref.set(rec.model_dump(mode="json"))
         return rec.id
 
@@ -246,7 +259,12 @@ class FirestoreService:
             ``True`` if the document existed and was updated; ``False`` if the
             document was not found.
         """
-        doc_ref = self._client.collection("users").document(user_id).collection("recommendations").document(rec_id)
+        doc_ref = (
+            self._client.collection("users")
+            .document(user_id)
+            .collection("recommendations")
+            .document(rec_id)
+        )
         snapshot = await doc_ref.get()
         if not snapshot.exists:
             return False

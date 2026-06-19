@@ -181,7 +181,9 @@ async def test_add_activity_returns_id() -> None:
     act = _activity()
     client = _make_client()
     # Nested path: collection("users").document(uid).collection("activities").document(id)
-    sub_doc_ref = client.collection.return_value.document.return_value.collection.return_value.document.return_value
+    sub_doc_ref = (
+        client.collection.return_value.document.return_value.collection.return_value.document.return_value
+    )
     sub_doc_ref.set = AsyncMock(return_value=None)
 
     returned_id = await FirestoreService(client=client).add_activity(act)
@@ -249,7 +251,9 @@ async def test_list_activities_with_before_filter() -> None:
 async def test_add_insight_returns_id() -> None:
     ins = _insight()
     client = _make_client()
-    sub_doc_ref = client.collection.return_value.document.return_value.collection.return_value.document.return_value
+    sub_doc_ref = (
+        client.collection.return_value.document.return_value.collection.return_value.document.return_value
+    )
     sub_doc_ref.set = AsyncMock(return_value=None)
 
     returned_id = await FirestoreService(client=client).add_insight(ins)
@@ -297,7 +301,9 @@ async def test_get_recent_insights_with_results() -> None:
 async def test_add_recommendation_returns_id() -> None:
     rec = _rec()
     client = _make_client()
-    sub_doc_ref = client.collection.return_value.document.return_value.collection.return_value.document.return_value
+    sub_doc_ref = (
+        client.collection.return_value.document.return_value.collection.return_value.document.return_value
+    )
     sub_doc_ref.set = AsyncMock(return_value=None)
 
     returned_id = await FirestoreService(client=client).add_recommendation(rec)
@@ -313,7 +319,9 @@ async def test_add_recommendation_returns_id() -> None:
 async def test_accept_recommendation_found() -> None:
     client = _make_client(snapshot_exists=True)
     # accept_recommendation navigates: collection.document.collection.document
-    sub_doc_ref = client.collection.return_value.document.return_value.collection.return_value.document.return_value
+    sub_doc_ref = (
+        client.collection.return_value.document.return_value.collection.return_value.document.return_value
+    )
     # Re-use the snapshot that _make_client already wired to sub_doc_ref.get
     sub_doc_ref.update = AsyncMock(return_value=None)
 

@@ -61,9 +61,9 @@ CASES: list[tuple[str, str, bool]] = [
 @pytest.mark.parametrize("text,expected_category,expected_allowed", CASES)
 def test_check_input_table(text: str, expected_category: str, expected_allowed: bool) -> None:
     result = check_input(text)
-    assert result.category == expected_category, (
-        f"Text {text!r}: expected category={expected_category!r}, got {result.category!r}"
-    )
+    assert (
+        result.category == expected_category
+    ), f"Text {text!r}: expected category={expected_category!r}, got {result.category!r}"
     assert result.allowed == expected_allowed
 
 

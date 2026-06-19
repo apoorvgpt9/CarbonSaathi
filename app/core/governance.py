@@ -150,7 +150,9 @@ _CARBON_KEYWORDS: frozenset[str] = frozenset(
 # Abuse word list  (short, English-only)
 # ---------------------------------------------------------------------------
 
-_ABUSE_WORDS: frozenset[str] = frozenset({"fuck", "fucking", "shit", "bitch", "bastard", "asshole", "cunt"})
+_ABUSE_WORDS: frozenset[str] = frozenset(
+    {"fuck", "fucking", "shit", "bitch", "bastard", "asshole", "cunt"}
+)
 
 # ---------------------------------------------------------------------------
 # Off-topic character threshold
