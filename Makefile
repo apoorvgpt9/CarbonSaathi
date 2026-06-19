@@ -3,15 +3,16 @@ APP := app.main:app
 IMAGE := carbonsaathi:local
 PORT := 8080
 
-.PHONY: help install run test lint format typecheck security all clean docker-build docker-run gcp-setup gcp-secrets deploy
+.PHONY: help install run test test-one lint format typecheck security all clean docker-build docker-run gcp-setup gcp-secrets deploy
 
 help:
 	@echo "Available targets:"
 	@echo "  install       Install the package with dev extras and pre-commit hooks"
 	@echo "  run           Run the uvicorn dev server on :$(PORT)"
-	@echo "  test          Run the test suite with coverage"
+	@echo "  test          Run the full test suite with coverage (must reach 95%)"
+	@echo "  test-one      Run a single file without coverage threshold: make test-one F=tests/test_health.py"
 	@echo "  lint          Run ruff checks"
-	@echo "  format        Auto-format with ruff and black"
+	@echo "  format        Auto-format with black"
 	@echo "  typecheck     Run mypy --strict"
 	@echo "  security      Run bandit and pip-audit"
 	@echo "  all           Run lint, typecheck, test, and security"
@@ -30,13 +31,15 @@ run:
 	$(PYTHON) -m uvicorn $(APP) --reload --host 0.0.0.0 --port $(PORT)
 
 test:
-	$(PYTHON) -m pytest
+	$(PYTHON) -m pytest --cov=app --cov-branch --cov-report=term-missing --cov-report=html --cov-fail-under=95
+
+test-one:
+	$(PYTHON) -m pytest $(F) --no-cov -v
 
 lint:
 	$(PYTHON) -m ruff check .
 
 format:
-	$(PYTHON) -m ruff check --fix .
 	$(PYTHON) -m black .
 
 typecheck:
