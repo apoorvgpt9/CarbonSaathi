@@ -1,0 +1,10 @@
+{
+  "description": "Model call exceeds the timeout budget.",
+  "user_input": "Took the metro 8 km to office",
+  "user_state": "Maharashtra",
+  "mock": { "kind": "raise", "exception": "TimeoutError" },
+  "expect": {
+    "status": "failed",
+    "reason_contains": "timed out"
+  }
+}

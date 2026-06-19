@@ -1,0 +1,10 @@
+{
+  "description": "Model replied with text but no function call.",
+  "user_input": "I commuted to work today",
+  "user_state": "Maharashtra",
+  "mock": { "kind": "text", "text": "I'm not sure which activity to log." },
+  "expect": {
+    "status": "failed",
+    "reason_contains": "function call"
+  }
+}

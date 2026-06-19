@@ -81,14 +81,18 @@ module = "tests.*"
 disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
-# firebase-admin and google-generativeai ship without py.typed markers
+# firebase-admin ships without py.typed; google-generativeai ships py.typed but
+# does not re-export its public API (configure, GenerativeModel) under
+# no_implicit_reexport. Relax re-export checking for these third-party SDKs.
 module = [
     "firebase_admin",
     "firebase_admin.*",
+    "google",
     "google.generativeai",
     "google.generativeai.*",
 ]
 ignore_missing_imports = true
+implicit_reexport = true
 
 [tool.pytest.ini_options]
 minversion = "8.0"

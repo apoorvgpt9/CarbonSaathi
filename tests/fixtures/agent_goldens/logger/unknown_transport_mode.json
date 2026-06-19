@@ -1,0 +1,14 @@
+{
+  "description": "Model returned a transport mode absent from the factor table.",
+  "user_input": "Commuted by hovercraft for about 5 km",
+  "user_state": "Maharashtra",
+  "mock": {
+    "kind": "function_call",
+    "function_name": "log_transport",
+    "function_args": { "mode": "hovercraft", "km": 5.0 }
+  },
+  "expect": {
+    "status": "failed",
+    "reason_contains": "Unknown transport mode"
+  }
+}

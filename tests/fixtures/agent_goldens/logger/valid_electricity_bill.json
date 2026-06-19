@@ -1,0 +1,18 @@
+{
+  "description": "Bill-only input; kWh derived at 8 INR/kWh, confidence downgraded to estimated.",
+  "user_input": "My electricity bill was 800 rupees this month",
+  "user_state": "Maharashtra",
+  "mock": {
+    "kind": "function_call",
+    "function_name": "log_electricity",
+    "function_args": { "bill_amount_inr": 800.0 }
+  },
+  "expect": {
+    "status": "success",
+    "type": "electricity",
+    "emission_kg_co2e": 79.0,
+    "confidence": "estimated",
+    "source_contains": "Central Electricity Authority",
+    "structured_subset": { "kwh": 100.0, "bill_amount_inr": 800.0 }
+  }
+}

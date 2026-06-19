@@ -7,7 +7,12 @@ from datetime import UTC, datetime
 import pytest
 from pydantic import ValidationError
 
-from app.models.activity import Activity
+from app.models.activity import (
+    Activity,
+    ElectricityData,
+    FoodData,
+    TransportData,
+)
 from app.models.shared import AgentReasoning
 
 
@@ -100,3 +105,68 @@ def test_activity_is_frozen() -> None:
     a = Activity(**_valid_activity())
     with pytest.raises((AttributeError, ValidationError)):
         a.emission_kg_co2e = 99.0  # type: ignore[misc]
+
+
+def test_transport_data_valid() -> None:
+    data = TransportData(mode="taxi_petrol", km=12.0)
+    assert data.mode == "taxi_petrol"
+    assert data.km == pytest.approx(12.0)
+    assert data.notes is None
+
+
+def test_transport_data_empty_mode_rejected() -> None:
+    with pytest.raises(ValidationError):
+        TransportData(mode="", km=1.0)
+
+
+def test_transport_data_negative_km_rejected() -> None:
+    with pytest.raises(ValidationError):
+        TransportData(mode="metro", km=-1.0)
+
+
+def test_transport_data_km_too_large_rejected() -> None:
+    with pytest.raises(ValidationError):
+        TransportData(mode="metro", km=10001.0)
+
+
+def test_electricity_data_kwh_only_valid() -> None:
+    data = ElectricityData(kwh=90.0)
+    assert data.kwh == pytest.approx(90.0)
+    assert data.bill_amount_inr is None
+
+
+def test_electricity_data_bill_only_valid() -> None:
+    data = ElectricityData(bill_amount_inr=800.0)
+    assert data.bill_amount_inr == pytest.approx(800.0)
+    assert data.kwh is None
+
+
+def test_electricity_data_requires_kwh_or_bill() -> None:
+    with pytest.raises(ValidationError):
+        ElectricityData(appliance="AC", hours=3.0)
+
+
+def test_electricity_data_negative_kwh_rejected() -> None:
+    with pytest.raises(ValidationError):
+        ElectricityData(kwh=-1.0)
+
+
+def test_food_data_valid() -> None:
+    data = FoodData(category="veg_meal", servings=2.0)
+    assert data.category == "veg_meal"
+    assert data.servings == pytest.approx(2.0)
+
+
+def test_food_data_zero_servings_rejected() -> None:
+    with pytest.raises(ValidationError):
+        FoodData(category="veg_meal", servings=0)
+
+
+def test_food_data_too_many_servings_rejected() -> None:
+    with pytest.raises(ValidationError):
+        FoodData(category="veg_meal", servings=21)
+
+
+def test_food_data_empty_category_rejected() -> None:
+    with pytest.raises(ValidationError):
+        FoodData(category="", servings=1.0)

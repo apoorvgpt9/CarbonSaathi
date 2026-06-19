@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.models.shared import AgentReasoning, IsoTimestamp
 from app.models.shared import Confidence as Confidence
@@ -47,3 +47,73 @@ class Activity(BaseModel):
     confidence: Confidence
     emission_factor_source: str = Field(min_length=1)
     agent_reasoning: AgentReasoning | None = None
+
+
+class TransportData(BaseModel):
+    """Structured fields extracted by the Logger for a transport activity.
+
+    Validated before being serialised into :attr:`Activity.structured_data`.
+
+    Attributes:
+        mode: Transport mode key matching a ``transport_factors.json`` entry.
+        km: Distance travelled in kilometres (0-10000).
+        notes: Optional free-text caveats captured by the agent.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    mode: str = Field(min_length=1)
+    km: float = Field(ge=0, le=10000)
+    notes: str | None = None
+
+
+class ElectricityData(BaseModel):
+    """Structured fields extracted by the Logger for an electricity activity.
+
+    At least one of ``kwh`` or ``bill_amount_inr`` must be provided.  When only
+    a bill amount is supplied, the Logger derives ``kwh`` from it and records the
+    assumption in ``notes``.
+
+    Attributes:
+        kwh: Energy consumed in kWh, if known or derived (≥ 0).
+        appliance: Optional appliance name the usage relates to.
+        hours: Optional hours of operation (≥ 0).
+        bill_amount_inr: Optional monthly bill amount in INR (≥ 0).
+        notes: Optional free-text caveats (e.g. the kWh-from-bill assumption).
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    kwh: float | None = Field(default=None, ge=0)
+    appliance: str | None = None
+    hours: float | None = Field(default=None, ge=0)
+    bill_amount_inr: float | None = Field(default=None, ge=0)
+    notes: str | None = None
+
+    @model_validator(mode="after")
+    def _require_kwh_or_bill(self) -> ElectricityData:
+        """Ensure at least one usage source is present.
+
+        Returns:
+            The validated model.
+
+        Raises:
+            ValueError: If both ``kwh`` and ``bill_amount_inr`` are ``None``.
+        """
+        if self.kwh is None and self.bill_amount_inr is None:
+            raise ValueError("at least one of kwh or bill_amount_inr must be provided")
+        return self
+
+
+class FoodData(BaseModel):
+    """Structured fields extracted by the Logger for a food activity.
+
+    Attributes:
+        category: Food category key matching a ``food_factors.json`` entry.
+        servings: Number of servings consumed (> 0, ≤ 20).
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    category: str = Field(min_length=1)
+    servings: float = Field(gt=0, le=20)

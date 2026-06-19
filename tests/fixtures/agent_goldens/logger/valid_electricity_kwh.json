@@ -1,0 +1,18 @@
+{
+  "description": "Direct kWh reading; no bill conversion, confidence from grid factor.",
+  "user_input": "Used about 90 units of electricity this week",
+  "user_state": "Maharashtra",
+  "mock": {
+    "kind": "function_call",
+    "function_name": "log_electricity",
+    "function_args": { "kwh": 90.0 }
+  },
+  "expect": {
+    "status": "success",
+    "type": "electricity",
+    "emission_kg_co2e": 71.1,
+    "confidence": "medium",
+    "source_contains": "Central Electricity Authority",
+    "structured_subset": { "kwh": 90.0, "bill_amount_inr": null, "notes": null }
+  }
+}

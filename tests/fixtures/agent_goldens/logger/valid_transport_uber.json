@@ -1,0 +1,18 @@
+{
+  "description": "Uber ride parsed as taxi_petrol over 12 km.",
+  "user_input": "Took an Uber to office, about 12 km",
+  "user_state": "Maharashtra",
+  "mock": {
+    "kind": "function_call",
+    "function_name": "log_transport",
+    "function_args": { "mode": "taxi_petrol", "km": 12.0 }
+  },
+  "expect": {
+    "status": "success",
+    "type": "transport",
+    "emission_kg_co2e": 2.04,
+    "confidence": "medium",
+    "source_contains": "ICCT",
+    "structured_subset": { "mode": "taxi_petrol", "km": 12.0, "notes": null }
+  }
+}

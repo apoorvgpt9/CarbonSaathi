@@ -1,0 +1,18 @@
+{
+  "description": "Paneer dish parsed as two servings.",
+  "user_input": "Had paneer butter masala, two servings",
+  "user_state": "Karnataka",
+  "mock": {
+    "kind": "function_call",
+    "function_name": "log_food",
+    "function_args": { "category": "paneer_serving_100g", "servings": 2.0 }
+  },
+  "expect": {
+    "status": "success",
+    "type": "food",
+    "emission_kg_co2e": 2.4,
+    "confidence": "estimated",
+    "source_contains": "FAO",
+    "structured_subset": { "category": "paneer_serving_100g", "servings": 2.0 }
+  }
+}
