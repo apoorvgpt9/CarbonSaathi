@@ -3,7 +3,7 @@ APP := app.main:app
 IMAGE := carbonsaathi:local
 PORT := 8080
 
-.PHONY: help install run test lint format typecheck security all clean docker-build docker-run
+.PHONY: help install run test lint format typecheck security all clean docker-build docker-run gcp-setup gcp-secrets deploy
 
 help:
 	@echo "Available targets:"
@@ -18,6 +18,9 @@ help:
 	@echo "  clean         Remove caches and build artifacts"
 	@echo "  docker-build  Build the container image"
 	@echo "  docker-run    Run the container image locally"
+	@echo "  gcp-setup     One-time GCP project + API + Firestore setup (set GCP_PROJECT_ID, GCP_BILLING_ACCOUNT_ID)"
+	@echo "  gcp-secrets   Push secrets from .env into GCP Secret Manager (set GCP_PROJECT_ID)"
+	@echo "  deploy        Deploy to Cloud Run via gcloud run deploy --source . (set GCP_PROJECT_ID)"
 
 install:
 	$(PYTHON) -m pip install -e ".[dev]"
@@ -55,3 +58,12 @@ docker-build:
 
 docker-run:
 	docker run --rm -p $(PORT):$(PORT) --env-file .env $(IMAGE)
+
+gcp-setup:
+	bash scripts/01_gcp_setup.sh
+
+gcp-secrets:
+	bash scripts/02_load_secrets.sh
+
+deploy:
+	bash scripts/03_deploy.sh

@@ -49,3 +49,10 @@ serviceAccountKey.json
 
 # Node (defensive — we are not using npm)
 node_modules/
+
+# Cloud Run deployment state (persisted between deploy runs)
+.deploy-url
+
+# GCP service account keys (defensive — should never be committed)
+*-sa-key.json
+*-service-account.json
