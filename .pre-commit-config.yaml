@@ -25,8 +25,18 @@ repos:
       - id: mypy
         args: ["--config-file=pyproject.toml"]
         additional_dependencies:
+          # Production deps that app/ imports directly
+          - "fastapi==0.137.2"
           - "pydantic==2.13.4"
           - "pydantic-settings==2.14.1"
+          - "structlog==26.1.0"
+          - "slowapi==0.1.10"
+          - "secure==2.0.1"
+          - "httpx==0.28.1"
+          # Test deps (mypy checks tests/ files on commit too)
+          - "pytest==9.1.0"
+          - "pytest-asyncio==1.4.0"
+          # Type stubs
           - "types-requests==2.33.0.20260518"
 
   - repo: https://github.com/PyCQA/bandit

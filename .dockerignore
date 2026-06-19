@@ -1,0 +1,23 @@
+.venv
+.git
+.github
+.vscode
+.idea
+.pytest_cache
+.mypy_cache
+.ruff_cache
+htmlcov
+.coverage
+.coverage.*
+__pycache__
+*.pyc
+.env*
+tests/
+scripts/
+DECISIONS.md
+.pre-commit-config.yaml
+Makefile
+
+# Exclude docs but keep README.md (referenced by pyproject.toml at build time).
+*.md
+!README.md

@@ -14,7 +14,29 @@ Python 3.13 · FastAPI · Firebase Auth · Firestore · Gemini 2.5 · Cloud Run
 See [DECISIONS.md](./DECISIONS.md) for full project context.
 
 ## Local Development
-(Coming in Phase 1B)
+
+### Prerequisites
+- Python 3.13.7
+- Docker (optional, for container builds)
+
+### Setup
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+pre-commit install
+cp .env.example .env
+# Edit .env and add your real values
+```
+
+### Run
+```bash
+make run            # uvicorn dev server on :8080
+make test           # tests + coverage
+make all            # full quality sweep
+make docker-build   # local container build
+make docker-run     # run container locally
+```
 
 ## License
 MIT
