@@ -1,0 +1,94 @@
+{
+  "schema_version": "1",
+  "unit": "kg_co2e_per_km",
+  "entries": {
+    "auto_rickshaw_cng": {
+      "value": 0.066,
+      "unit": "kg_co2e_per_km",
+      "source": "ICCT India, Bharat Stage VI Emission Standards and Vehicle Efficiency study (2020)",
+      "confidence": "medium",
+      "last_verified": "2023-06-01",
+      "notes": null
+    },
+    "metro": {
+      "value": 0.031,
+      "unit": "kg_co2e_per_km",
+      "source": "DMRC Sustainability Report 2022-23 (per passenger-km, Scope 2 grid emissions included)",
+      "confidence": "medium",
+      "last_verified": "2023-06-01",
+      "notes": null
+    },
+    "bus_public": {
+      "value": 0.039,
+      "unit": "kg_co2e_per_km",
+      "source": "India GHG Inventory 2016, Ministry of Environment, Forest and Climate Change; per passenger-km on a loaded urban bus",
+      "confidence": "medium",
+      "last_verified": "2023-06-01",
+      "notes": null
+    },
+    "taxi_petrol": {
+      "value": 0.170,
+      "unit": "kg_co2e_per_km",
+      "source": "ICCT India road vehicle emission factors (2023); petrol sedan, per vehicle-km",
+      "confidence": "medium",
+      "last_verified": "2023-06-01",
+      "notes": null
+    },
+    "taxi_cng": {
+      "value": 0.095,
+      "unit": "kg_co2e_per_km",
+      "source": "ICCT India road vehicle emission factors (2023); CNG sedan, per vehicle-km",
+      "confidence": "medium",
+      "last_verified": "2023-06-01",
+      "notes": null
+    },
+    "two_wheeler_petrol": {
+      "value": 0.060,
+      "unit": "kg_co2e_per_km",
+      "source": "ICCT India two-wheeler emission and efficiency study (2023); 125cc-class petrol scooter",
+      "confidence": "medium",
+      "last_verified": "2023-06-01",
+      "notes": null
+    },
+    "two_wheeler_electric": {
+      "value": 0.047,
+      "unit": "kg_co2e_per_km",
+      "source": "ICCT India EV lifecycle analysis (2023) combined with CEA CO2 Baseline Database Version 19.0 (2023-24)",
+      "confidence": "estimated",
+      "last_verified": "2023-06-01",
+      "notes": "Assumes Indian national average grid factor of 0.82 kg CO2e/kWh (CEA 2023); actual emissions vary by state. Efficiency basis: 57 Wh/km (typical 125cc-class EV scooter, e.g. Ola S1, Ather 450X)."
+    },
+    "four_wheeler_petrol": {
+      "value": 0.192,
+      "unit": "kg_co2e_per_km",
+      "source": "ICCT India road vehicle emission factors (2023); B/C-segment petrol passenger car, per vehicle-km",
+      "confidence": "medium",
+      "last_verified": "2023-06-01",
+      "notes": null
+    },
+    "four_wheeler_electric": {
+      "value": 0.135,
+      "unit": "kg_co2e_per_km",
+      "source": "ICCT India EV lifecycle analysis (2023) combined with CEA CO2 Baseline Database Version 19.0 (2023-24)",
+      "confidence": "estimated",
+      "last_verified": "2023-06-01",
+      "notes": "Assumes Indian national average grid factor of 0.82 kg CO2e/kWh (CEA 2023); actual emissions vary by state. Efficiency basis: 165 Wh/km (typical B-segment EV, e.g. Tata Nexon EV)."
+    },
+    "walking": {
+      "value": 0.0,
+      "unit": "kg_co2e_per_km",
+      "source": "Zero by definition; no fuel or grid energy consumed during walking",
+      "confidence": "high",
+      "last_verified": "2023-06-01",
+      "notes": "Zero tailpipe emissions by definition; upstream caloric food emissions are excluded and not modelled here."
+    },
+    "wfh": {
+      "value": 0.0,
+      "unit": "kg_co2e_per_km",
+      "source": "Zero by definition; work-from-home involves no commute distance",
+      "confidence": "high",
+      "last_verified": "2023-06-01",
+      "notes": "Work-from-home transport leg is zero km; home energy consumption is logged separately as an electricity activity type."
+    }
+  }
+}

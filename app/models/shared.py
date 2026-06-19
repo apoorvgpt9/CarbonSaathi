@@ -39,6 +39,14 @@ Any timezone-aware datetime is accepted and silently converted to UTC.
 Naive datetimes are rejected with a ``ValueError``.
 """
 
+Confidence = Literal["high", "medium", "estimated"]
+"""Confidence level of an emission calculation or factor estimate.
+
+``high``      — activity fully matched a known emission factor.
+``medium``    — factor inferred from partial data (e.g. trip distance estimated).
+``estimated`` — significant assumptions were required.
+"""
+
 
 class AgentReasoning(BaseModel):
     """Trace envelope captured by an AI agent during a single inference pass.

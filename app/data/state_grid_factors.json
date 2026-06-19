@@ -1,0 +1,294 @@
+{
+  "schema_version": "1",
+  "unit": "kg_co2e_per_kwh",
+  "entries": {
+    "Andhra Pradesh": {
+      "value": 0.74,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Arunachal Pradesh": {
+      "value": 0.68,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Assam": {
+      "value": 0.68,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Bihar": {
+      "value": 0.96,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Chhattisgarh": {
+      "value": 0.87,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "estimated",
+      "last_verified": "2024-01-01",
+      "notes": "Among India's most coal-intensive grids; adjusted approximately +10% above Western regional average (0.79) to reflect the state's thermal-dominated generation mix."
+    },
+    "Goa": {
+      "value": 0.79,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Gujarat": {
+      "value": 0.79,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Haryana": {
+      "value": 0.82,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Himachal Pradesh": {
+      "value": 0.82,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Jharkhand": {
+      "value": 1.05,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "estimated",
+      "last_verified": "2024-01-01",
+      "notes": "Coal-belt state with heavy thermal dependence; grid intensity exceeds the Eastern regional average (0.96). Adjusted upward to reflect Jharkhand's outsized contribution to the eastern thermal fleet."
+    },
+    "Karnataka": {
+      "value": 0.74,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Kerala": {
+      "value": 0.58,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "estimated",
+      "last_verified": "2024-01-01",
+      "notes": "Hydro and renewable energy mix significantly lowers grid carbon intensity compared to the Southern regional average (0.74). Value adjusted downward; actual intensity varies year-to-year with monsoon hydrology."
+    },
+    "Madhya Pradesh": {
+      "value": 0.87,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "estimated",
+      "last_verified": "2024-01-01",
+      "notes": "Coal-dominant generation mix; adjusted approximately +10% above Western regional average (0.79) to reflect Madhya Pradesh's large thermal installed base."
+    },
+    "Maharashtra": {
+      "value": 0.79,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Manipur": {
+      "value": 0.68,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Meghalaya": {
+      "value": 0.68,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Mizoram": {
+      "value": 0.68,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Nagaland": {
+      "value": 0.68,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Odisha": {
+      "value": 0.96,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Punjab": {
+      "value": 0.82,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Rajasthan": {
+      "value": 0.82,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Sikkim": {
+      "value": 0.38,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "estimated",
+      "last_verified": "2024-01-01",
+      "notes": "Hydro-dominant state; Teesta cascade projects supply the majority of demand. Grid intensity is substantially below the North-Eastern regional average (0.68)."
+    },
+    "Tamil Nadu": {
+      "value": 0.74,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Telangana": {
+      "value": 0.74,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Tripura": {
+      "value": 0.68,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Uttar Pradesh": {
+      "value": 0.82,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Uttarakhand": {
+      "value": 0.82,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "West Bengal": {
+      "value": 0.96,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Andaman and Nicobar Islands": {
+      "value": 0.74,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "estimated",
+      "last_verified": "2024-01-01",
+      "notes": "Isolated island grid; not connected to the Southern mainland grid. Southern regional average (0.74) applied as a proxy. Actual intensity may differ due to diesel generation dependence."
+    },
+    "Chandigarh": {
+      "value": 0.82,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Dadra and Nagar Haveli and Daman and Diu": {
+      "value": 0.79,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Delhi": {
+      "value": 0.82,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Jammu and Kashmir": {
+      "value": 0.82,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Ladakh": {
+      "value": 0.82,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    },
+    "Lakshadweep": {
+      "value": 0.74,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "estimated",
+      "last_verified": "2024-01-01",
+      "notes": "Isolated island grid; not connected to the Southern mainland grid. Southern regional average (0.74) applied as a proxy. Actual intensity may differ due to solar and diesel generation mix."
+    },
+    "Puducherry": {
+      "value": 0.74,
+      "unit": "kg_co2e_per_kwh",
+      "source": "Central Electricity Authority (CEA), CO2 Baseline Database for the Indian Power Sector, Version 19.0 (2023-24)",
+      "confidence": "medium",
+      "last_verified": "2024-01-01",
+      "notes": null
+    }
+  }
+}

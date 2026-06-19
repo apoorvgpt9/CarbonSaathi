@@ -1,0 +1,86 @@
+{
+  "schema_version": "1",
+  "unit": "kg_co2e_per_serving",
+  "entries": {
+    "veg_meal": {
+      "value": 0.90,
+      "unit": "kg_co2e_per_serving",
+      "source": "FAO Food Emissions Database; Indian dietary survey data, methodology in README",
+      "confidence": "estimated",
+      "last_verified": "2023-06-01",
+      "notes": "1 Indian thali: dal + sabzi + 2 roti + rice, ~600g cooked weight total. Meal composition varies widely; factor represents a typical middle-income urban thali."
+    },
+    "non_veg_meal_chicken": {
+      "value": 2.10,
+      "unit": "kg_co2e_per_serving",
+      "source": "FAO Food Emissions Database (poultry: ~6.9 kg CO2e/kg live weight); Indian dietary survey data, methodology in README",
+      "confidence": "estimated",
+      "last_verified": "2023-06-01",
+      "notes": "1 serving chicken curry with rice: ~100g boneless chicken + ~150g cooked rice + sabzi, ~450g total cooked weight. Poultry factor includes feed, farm, and processing; rice and vegetable accompaniments included."
+    },
+    "non_veg_meal_mutton": {
+      "value": 4.50,
+      "unit": "kg_co2e_per_serving",
+      "source": "FAO Food Emissions Database (sheep/goat: ~39 kg CO2e/kg, India-adjusted downward for goat vs sheep); Indian dietary survey data, methodology in README",
+      "confidence": "estimated",
+      "last_verified": "2023-06-01",
+      "notes": "1 serving mutton/goat curry with rice: ~100g boneless mutton + ~150g cooked rice, ~400g total cooked weight. Indian mutton is predominantly goat; factor adjusted below the global sheep average."
+    },
+    "non_veg_meal_fish": {
+      "value": 1.20,
+      "unit": "kg_co2e_per_serving",
+      "source": "FAO Food Emissions Database; LEAP (Livestock Environmental Assessment and Performance) Partnership 2020; Indian dietary survey data, methodology in README",
+      "confidence": "estimated",
+      "last_verified": "2023-06-01",
+      "notes": "1 serving fish curry with rice: ~100g fish + ~150g cooked rice, ~400g total cooked weight. Indian fish consumption is a mix of coastal catch and freshwater aquaculture; factor averaged across common species."
+    },
+    "egg_single": {
+      "value": 0.25,
+      "unit": "kg_co2e_per_serving",
+      "source": "FAO Food Emissions Database (eggs: ~4.2 kg CO2e/kg); Indian dietary survey data, methodology in README",
+      "confidence": "estimated",
+      "last_verified": "2023-06-01",
+      "notes": "1 large whole egg, ~60g. Factor includes feed, farm operations, and processing but excludes cooking energy."
+    },
+    "dairy_serving_250ml": {
+      "value": 0.63,
+      "unit": "kg_co2e_per_serving",
+      "source": "FAO Food Emissions Database (dairy milk: ~3.2 kg CO2e/kg, India-adjusted for local feed mix); Indian dietary survey data, methodology in README",
+      "confidence": "estimated",
+      "last_verified": "2023-06-01",
+      "notes": "250ml whole cow's milk. Adjusted for Indian mixed-breed cattle and feed composition which typically results in a lower emission intensity than global OECD averages."
+    },
+    "paneer_serving_100g": {
+      "value": 1.20,
+      "unit": "kg_co2e_per_serving",
+      "source": "FAO Food Emissions Database; milk-to-paneer conversion ratio applied to dairy milk factor; Indian dietary survey data, methodology in README",
+      "confidence": "estimated",
+      "last_verified": "2023-06-01",
+      "notes": "100g paneer; approximately 0.5 kg whole milk required (5:1 milk-to-paneer conversion ratio by weight). Factor includes dairy farming emissions allocated to paneer fraction."
+    },
+    "dal_serving": {
+      "value": 0.35,
+      "unit": "kg_co2e_per_serving",
+      "source": "FAO Food Emissions Database (pulses: ~0.9 kg CO2e/kg dry weight); Indian dietary survey data, methodology in README",
+      "confidence": "estimated",
+      "last_verified": "2023-06-01",
+      "notes": "200ml cooked dal (~70g dry lentils/split pulses + water + tempering oil and spices). Pulse factor includes nitrogen fixation credit; tempering oil and spices add a small additional contribution."
+    },
+    "rice_serving": {
+      "value": 0.43,
+      "unit": "kg_co2e_per_serving",
+      "source": "FAO Food Emissions Database (rice: ~4.0 kg CO2e/kg paddy including CH4); IRRI rice GHG emissions study 2021; Indian dietary survey data, methodology in README",
+      "confidence": "estimated",
+      "last_verified": "2023-06-01",
+      "notes": "1 cup cooked rice, ~75g uncooked dry weight (~190g cooked). Includes methane (CH4) from anaerobic decomposition in flooded paddy fields, which is the dominant emission source for rice cultivation."
+    },
+    "snack_processed": {
+      "value": 0.60,
+      "unit": "kg_co2e_per_serving",
+      "source": "FAO Food Emissions Database; lifecycle analysis for packaged foods (India-adjusted); Indian dietary survey data, methodology in README",
+      "confidence": "estimated",
+      "last_verified": "2023-06-01",
+      "notes": "1 packet processed snack ~50g (e.g. chips, biscuits, namkeen). Factor covers raw ingredient farming, industrial processing, and primary packaging; retail transport and refrigeration excluded."
+    }
+  }
+}

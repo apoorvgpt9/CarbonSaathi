@@ -12,17 +12,10 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.shared import AgentReasoning, IsoTimestamp
+from app.models.shared import Confidence as Confidence
 
 ActivityType = Literal["transport", "electricity", "food"]
 """Category of carbon-emitting activity."""
-
-Confidence = Literal["high", "medium", "estimated"]
-"""Confidence level of the emission calculation.
-
-``high``      — activity fully matched a known emission factor.
-``medium``    — factor inferred from partial data (e.g. trip distance estimated).
-``estimated`` — significant assumptions were required.
-"""
 
 
 class Activity(BaseModel):

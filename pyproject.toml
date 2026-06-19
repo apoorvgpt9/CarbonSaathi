@@ -55,7 +55,7 @@ select = ["E", "W", "F", "I", "B", "C4", "UP", "N", "D", "S", "RUF"]
 ignore = ["D100", "D104", "D107"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["D", "S101"]
+"tests/*" = ["D", "S101", "S603", "S607"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -95,6 +95,7 @@ minversion = "8.0"
 addopts = "-ra -q --strict-markers"
 testpaths = ["tests"]
 asyncio_mode = "auto"
+pythonpath = ["."]
 markers = [
     "integration: marks tests as integration tests",
     "slow: marks tests as slow",
