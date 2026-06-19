@@ -22,6 +22,8 @@ dependencies = [
     "httpx==0.28.1",
     "python-dotenv==1.2.2",
     "structlog==26.1.0",
+    "email-validator>=2.0.0",
+    "google-cloud-firestore>=2.17.0",
 ]
 
 [project.optional-dependencies]
@@ -77,6 +79,16 @@ ignore_missing_imports = false
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+# firebase-admin and google-generativeai ship without py.typed markers
+module = [
+    "firebase_admin",
+    "firebase_admin.*",
+    "google.generativeai",
+    "google.generativeai.*",
+]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 minversion = "8.0"
