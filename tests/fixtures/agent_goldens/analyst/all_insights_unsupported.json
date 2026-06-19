@@ -1,0 +1,18 @@
+{
+  "description": "Every draft is dropped (unsupported pattern with only unknown IDs, plus an invalid type); returns empty.",
+  "activities": [
+    {"id": "a1", "type": "transport", "emission_kg_co2e": 2.04, "raw_input": "Uber to office", "days_ago": 1},
+    {"id": "a2", "type": "electricity", "emission_kg_co2e": 6.3, "raw_input": "AC ran 8 units", "days_ago": 2},
+    {"id": "a3", "type": "food", "emission_kg_co2e": 0.9, "raw_input": "veg thali", "days_ago": 3}
+  ],
+  "mock": {
+    "kind": "json",
+    "payload": {
+      "insights": [
+        {"type": "pattern", "title": "Phantom", "description": "Cites only unknown activity IDs.", "supporting_activity_ids": ["ghost-1", "ghost-2"]},
+        {"type": "nonsense", "title": "Invalid", "description": "Unsupported insight type.", "supporting_activity_ids": ["a1"]}
+      ]
+    }
+  },
+  "expect": {"status": "empty"}
+}

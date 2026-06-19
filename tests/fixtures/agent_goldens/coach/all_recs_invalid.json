@@ -1,0 +1,20 @@
+{
+  "description": "Every recommendation is malformed (missing basis, unknown kind, out-of-range param); the Coach returns empty.",
+  "user_state": "Maharashtra",
+  "activities": [
+    {"id": "a1", "type": "transport", "emission_kg_co2e": 2.04, "raw_input": "Uber to office", "days_ago": 1, "structured_data": {"mode": "taxi_petrol", "km": 12.0}},
+    {"id": "a2", "type": "food", "emission_kg_co2e": 2.1, "raw_input": "chicken lunch", "days_ago": 2, "structured_data": {"category": "non_veg_meal_chicken", "servings": 1.0}}
+  ],
+  "insights": [],
+  "mock": {
+    "kind": "json",
+    "payload": {
+      "recommendations": [
+        {"type": "swap", "title": "No basis", "description": "Missing the required saving_basis.", "difficulty": "easy"},
+        {"type": "swap", "title": "Unknown kind", "description": "saving_basis kind is not supported.", "difficulty": "easy", "saving_basis": {"kind": "fly_less", "weekly_km": 10}},
+        {"type": "swap", "title": "Out of range", "description": "weekly_km exceeds the allowed maximum.", "difficulty": "easy", "saving_basis": {"kind": "transport_swap", "from_mode": "taxi_petrol", "to_mode": "metro", "weekly_km": 99999}}
+      ]
+    }
+  },
+  "expect": {"status": "empty"}
+}

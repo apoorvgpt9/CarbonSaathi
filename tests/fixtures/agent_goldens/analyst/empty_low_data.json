@@ -1,0 +1,9 @@
+{
+  "description": "Only two activities (below the minimum); returns empty without any model call.",
+  "activities": [
+    {"id": "a1", "type": "transport", "emission_kg_co2e": 2.04, "raw_input": "Uber to office", "days_ago": 1},
+    {"id": "a2", "type": "food", "emission_kg_co2e": 0.9, "raw_input": "veg thali", "days_ago": 2}
+  ],
+  "mock": {"kind": "skip"},
+  "expect": {"status": "empty", "no_model_call": true}
+}

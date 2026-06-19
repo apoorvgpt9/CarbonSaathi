@@ -1,0 +1,21 @@
+{
+  "description": "Five activities across categories; model returns three valid insights spanning all weekly buckets.",
+  "activities": [
+    {"id": "a1", "type": "transport", "emission_kg_co2e": 2.04, "raw_input": "Uber to office, about 12 km", "days_ago": 1},
+    {"id": "a2", "type": "transport", "emission_kg_co2e": 2.04, "raw_input": "Uber back home, about 12 km", "days_ago": 2},
+    {"id": "a3", "type": "electricity", "emission_kg_co2e": 6.3, "raw_input": "AC ran roughly 8 units", "days_ago": 3},
+    {"id": "a4", "type": "food", "emission_kg_co2e": 2.1, "raw_input": "chicken biryani lunch", "days_ago": 9},
+    {"id": "a5", "type": "food", "emission_kg_co2e": 0.9, "raw_input": "veg thali dinner", "days_ago": 20}
+  ],
+  "mock": {
+    "kind": "json",
+    "payload": {
+      "insights": [
+        {"type": "pattern", "title": "Daily cab habit", "description": "You take a cab to and from the office on most working days.", "supporting_activity_ids": ["a1", "a2"]},
+        {"type": "trend", "title": "Food emissions easing", "description": "Your meals shifted from chicken towards veg over the weeks.", "supporting_activity_ids": ["a4", "a5"]},
+        {"type": "milestone", "title": "First veg dinner logged", "description": "You logged your first low-carbon veg thali.", "supporting_activity_ids": []}
+      ]
+    }
+  },
+  "expect": {"status": "success", "insight_count": 3}
+}

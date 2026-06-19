@@ -1,0 +1,19 @@
+{
+  "description": "A transport_swap to an unknown mode is dropped; one valid food_swap remains.",
+  "user_state": "Karnataka",
+  "activities": [
+    {"id": "a1", "type": "transport", "emission_kg_co2e": 2.04, "raw_input": "Uber to office", "days_ago": 1, "structured_data": {"mode": "taxi_petrol", "km": 12.0}},
+    {"id": "a2", "type": "food", "emission_kg_co2e": 2.1, "raw_input": "chicken lunch", "days_ago": 2, "structured_data": {"category": "non_veg_meal_chicken", "servings": 1.0}}
+  ],
+  "insights": [],
+  "mock": {
+    "kind": "json",
+    "payload": {
+      "recommendations": [
+        {"type": "swap", "title": "Teleport to work", "description": "References a mode that does not exist.", "difficulty": "easy", "saving_basis": {"kind": "transport_swap", "from_mode": "taxi_petrol", "to_mode": "teleporter", "weekly_km": 50}},
+        {"type": "swap", "title": "Veg thali swap", "description": "Swap two chicken lunches a week for a veg thali.", "difficulty": "easy", "saving_basis": {"kind": "food_swap", "from_category": "non_veg_meal_chicken", "to_category": "veg_meal", "weekly_meals": 2}}
+      ]
+    }
+  },
+  "expect": {"status": "success", "rec_count": 1, "reasoning_contains": "Dropped rec"}
+}

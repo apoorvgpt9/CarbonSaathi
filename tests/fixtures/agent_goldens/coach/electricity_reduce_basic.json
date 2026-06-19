@@ -1,0 +1,17 @@
+{
+  "description": "A single valid electricity_reduce recommendation; the saving is computed from the state grid factor.",
+  "user_state": "Maharashtra",
+  "activities": [
+    {"id": "e1", "type": "electricity", "emission_kg_co2e": 6.3, "raw_input": "AC ran about 8 units", "days_ago": 1, "structured_data": {"kwh": 8.0}}
+  ],
+  "insights": [],
+  "mock": {
+    "kind": "json",
+    "payload": {
+      "recommendations": [
+        {"type": "reduce", "title": "Cut AC by an hour", "description": "Run the AC one hour less each night to save power.", "difficulty": "medium", "saving_basis": {"kind": "electricity_reduce", "weekly_kwh_reduction": 10}}
+      ]
+    }
+  },
+  "expect": {"status": "success", "rec_count": 1}
+}

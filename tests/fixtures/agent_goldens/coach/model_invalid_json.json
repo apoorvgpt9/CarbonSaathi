@@ -1,0 +1,11 @@
+{
+  "description": "Model returns malformed JSON; coaching fails.",
+  "user_state": "Maharashtra",
+  "activities": [
+    {"id": "a1", "type": "transport", "emission_kg_co2e": 2.04, "raw_input": "Uber to office", "days_ago": 1, "structured_data": {"mode": "taxi_petrol", "km": 12.0}},
+    {"id": "a2", "type": "food", "emission_kg_co2e": 2.1, "raw_input": "chicken lunch", "days_ago": 2, "structured_data": {"category": "non_veg_meal_chicken", "servings": 1.0}}
+  ],
+  "insights": [],
+  "mock": {"kind": "raw", "text": "{not valid json"},
+  "expect": {"status": "failed"}
+}

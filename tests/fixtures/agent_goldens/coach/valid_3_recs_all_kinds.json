@@ -1,0 +1,23 @@
+{
+  "description": "One valid recommendation of each saving_basis kind; all survive validation.",
+  "user_state": "Maharashtra",
+  "activities": [
+    {"id": "a1", "type": "transport", "emission_kg_co2e": 2.04, "raw_input": "Uber to office, about 12 km", "days_ago": 1, "structured_data": {"mode": "taxi_petrol", "km": 12.0}},
+    {"id": "a2", "type": "electricity", "emission_kg_co2e": 6.3, "raw_input": "AC ran about 8 units", "days_ago": 2, "structured_data": {"kwh": 8.0}},
+    {"id": "a3", "type": "food", "emission_kg_co2e": 2.1, "raw_input": "chicken biryani lunch", "days_ago": 3, "structured_data": {"category": "non_veg_meal_chicken", "servings": 1.0}}
+  ],
+  "insights": [
+    {"type": "pattern", "title": "Daily cab habit"}
+  ],
+  "mock": {
+    "kind": "json",
+    "payload": {
+      "recommendations": [
+        {"type": "swap", "title": "Metro over cab", "description": "Take the metro for your office commute instead of a cab.", "difficulty": "easy", "saving_basis": {"kind": "transport_swap", "from_mode": "taxi_petrol", "to_mode": "metro", "weekly_km": 60}},
+        {"type": "reduce", "title": "Trim AC use", "description": "Run the AC one hour less each night.", "difficulty": "medium", "saving_basis": {"kind": "electricity_reduce", "weekly_kwh_reduction": 7}},
+        {"type": "swap", "title": "Veg thali Thursdays", "description": "Swap two chicken lunches a week for a veg thali.", "difficulty": "easy", "saving_basis": {"kind": "food_swap", "from_category": "non_veg_meal_chicken", "to_category": "veg_meal", "weekly_meals": 2}}
+      ]
+    }
+  },
+  "expect": {"status": "success", "rec_count": 3}
+}

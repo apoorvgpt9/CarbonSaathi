@@ -1,0 +1,19 @@
+{
+  "description": "A food_swap whose from-category emits less than the to-category saves nothing and is dropped; one valid rec remains.",
+  "user_state": "Delhi",
+  "activities": [
+    {"id": "a1", "type": "transport", "emission_kg_co2e": 2.04, "raw_input": "Uber to office", "days_ago": 1, "structured_data": {"mode": "taxi_petrol", "km": 12.0}},
+    {"id": "a2", "type": "food", "emission_kg_co2e": 0.9, "raw_input": "veg thali", "days_ago": 2, "structured_data": {"category": "veg_meal", "servings": 1.0}}
+  ],
+  "insights": [],
+  "mock": {
+    "kind": "json",
+    "payload": {
+      "recommendations": [
+        {"type": "swap", "title": "Backwards food swap", "description": "Swaps veg for chicken, which raises emissions.", "difficulty": "easy", "saving_basis": {"kind": "food_swap", "from_category": "veg_meal", "to_category": "non_veg_meal_chicken", "weekly_meals": 3}},
+        {"type": "swap", "title": "Metro over cab", "description": "Take the metro for your office commute.", "difficulty": "easy", "saving_basis": {"kind": "transport_swap", "from_mode": "taxi_petrol", "to_mode": "metro", "weekly_km": 30}}
+      ]
+    }
+  },
+  "expect": {"status": "success", "rec_count": 1, "reasoning_contains": "saves nothing"}
+}
