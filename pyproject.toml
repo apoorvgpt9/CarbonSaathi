@@ -79,7 +79,7 @@ disallow_untyped_defs = false
 
 [tool.pytest.ini_options]
 minversion = "8.0"
-addopts = "-ra -q --strict-markers --cov=app --cov-report=term-missing --cov-report=html --cov-fail-under=80"
+addopts = "-ra -q --strict-markers --cov=app --cov-report=term-missing --cov-report=html --cov-fail-under=95"
 testpaths = ["tests"]
 asyncio_mode = "auto"
 markers = [
