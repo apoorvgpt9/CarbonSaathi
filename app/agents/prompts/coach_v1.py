@@ -12,7 +12,7 @@ from typing import Any
 
 from app.models.activity import Activity
 from app.models.insight import Insight
-from app.models.user import UserProfile
+from app.models.user import HomeProfile, IndianState
 from app.services.emission_service import get_emission_service
 
 PROMPT_VERSION = "coach-v1"
@@ -85,7 +85,8 @@ _SUMMARY_LIMIT = 80
 
 
 def build_user_prompt(
-    profile: UserProfile,
+    state: IndianState,
+    home: HomeProfile,
     bucketed_activities: dict[str, list[Activity]],
     insights: list[Insight],
 ) -> str:
@@ -97,7 +98,8 @@ def build_user_prompt(
     Analyst's insight headlines.
 
     Args:
-        profile: The user's profile (state, diet, AC, home size).
+        state: The user's Indian state (selects the grid emission factor).
+        home: The user's home profile (diet, AC ownership, home size).
         bucketed_activities: Activities grouped by recency bucket.
         insights: Insights produced by the Analyst (may be empty).
 
@@ -105,11 +107,10 @@ def build_user_prompt(
         A deterministic, human-readable prompt body.
     """
     service = get_emission_service()
-    home = profile.home_profile
     lines = [
         "USER PROFILE",
         (
-            f"State: {profile.state.value}; diet: {home.dietary}; "
+            f"State: {state.value}; diet: {home.dietary}; "
             f"AC: {'yes' if home.has_ac else 'no'}; home: {home.bhk}BHK."
         ),
     ]
@@ -132,8 +133,8 @@ def build_user_prompt(
 
     lines.append("")
     lines.append("EMISSION FACTORS (kg CO2e)")
-    grid = service.get_grid_factor(profile.state)
-    lines.append(f"Electricity — {profile.state.value} grid: {grid.entry.value} per kWh.")
+    grid = service.get_grid_factor(state)
+    lines.append(f"Electricity — {state.value} grid: {grid.entry.value} per kWh.")
     if modes:
         lines.append("Transport (per km):")
         for mode in modes:

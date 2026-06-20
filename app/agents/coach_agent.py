@@ -299,11 +299,23 @@ class CoachAgent(BaseAgent):
         """
         start = self._now_ms()
         moment = now if now is not None else datetime.now(tz=UTC)
-        state = profile.state
         steps: list[str] = []
 
+        if profile.state is None or profile.home_profile is None:
+            return CoachEmpty(
+                reason="Complete onboarding (state and home profile) to get recommendations.",
+                agent_reasoning=self._reasoning(
+                    input_summary=f"{len(activities)} activities; user not onboarded.",
+                    steps=["User has no state or home profile; onboarding incomplete."],
+                    output_summary="No recommendations (onboarding incomplete).",
+                    start=start,
+                ),
+            )
+        state = profile.state
+        home = profile.home_profile
+
         buckets = bucket_by_week(activities, now=moment)
-        prompt = build_user_prompt(profile, buckets, insights)
+        prompt = build_user_prompt(state, home, buckets, insights)
         input_summary = f"{len(activities)} activities; {len(insights)} insights; {state.value}."
 
         try:

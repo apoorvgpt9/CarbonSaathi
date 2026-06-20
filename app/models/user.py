@@ -91,10 +91,13 @@ class UserProfile(BaseModel):
 
     Attributes:
         uid: Firebase Authentication UID (primary key).
-        email: Verified email address (``EmailStr`` enforces RFC format).
+        email: Verified email address (``EmailStr`` enforces RFC format); ``None``
+            when the verified token carries no email claim.
         display_name: Human-readable name from Google Sign-In.
-        state: Indian state used to select the CEA grid emission factor.
-        home_profile: Home attributes for electricity and food estimation.
+        state: Indian state used to select the CEA grid emission factor; ``None``
+            until the user completes onboarding.
+        home_profile: Home attributes for electricity and food estimation; ``None``
+            until the user completes onboarding.
         created_at: Account creation timestamp (UTC, timezone-aware).
         last_active: Last recorded user activity timestamp (UTC, timezone-aware).
         onboarding_complete: ``True`` once the user has submitted the onboarding form.
@@ -103,10 +106,10 @@ class UserProfile(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     uid: str
-    email: EmailStr
+    email: EmailStr | None = None
     display_name: str
-    state: IndianState
-    home_profile: HomeProfile
+    state: IndianState | None = None
+    home_profile: HomeProfile | None = None
     created_at: IsoTimestamp
     last_active: IsoTimestamp
     onboarding_complete: bool = False

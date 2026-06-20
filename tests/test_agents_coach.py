@@ -259,7 +259,6 @@ def test_evaluate_basis_below_threshold_none() -> None:
 
 
 def test_build_user_prompt_skips_unknown_factors() -> None:
-    profile = _profile("Maharashtra")
     activities = [
         _activity(
             {
@@ -283,10 +282,30 @@ def test_build_user_prompt_skips_unknown_factors() -> None:
         ),
     ]
     buckets = {"this_week": activities, "last_week": [], "earlier": []}
-    text = build_user_prompt(profile, buckets, [])
+    text = build_user_prompt(
+        IndianState("Maharashtra"),
+        HomeProfile(bhk=2, has_ac=True, fridge_class="3-star", dietary="non-veg"),
+        buckets,
+        [],
+    )
     assert "EMISSION FACTORS" in text
     assert "unknown_mode" not in text
     assert "unknown_category" not in text
+
+
+async def test_coach_not_onboarded_returns_empty() -> None:
+    profile = _profile("Maharashtra").model_copy(update={"state": None, "home_profile": None})
+    agent, model = _make_agent({"kind": "raw", "text": "{}"})
+    outcome = await agent.generate_recommendations(
+        profile=profile,
+        activities=[],
+        insights=[],
+        user_id="user-1",
+        now=_FIXED_NOW,
+    )
+    assert isinstance(outcome, CoachEmpty)
+    assert "onboarding" in outcome.reason.lower()
+    model.generate_content_async.assert_not_called()
 
 
 def test_coach_constructor_user_state_stored() -> None:

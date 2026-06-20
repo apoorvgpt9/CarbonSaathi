@@ -17,7 +17,7 @@ from starlette.responses import Response
 from app.core.config import get_settings
 from app.core.logging import configure_logging
 from app.core.security import configure_security_middleware
-from app.routes import health
+from app.routes import auth, health, users
 
 logger = structlog.get_logger(__name__)
 
@@ -91,6 +91,8 @@ def create_app() -> FastAPI:
 
     configure_security_middleware(app)
     app.include_router(health.router, prefix="/api")
+    app.include_router(auth.router, prefix="/api")
+    app.include_router(users.router, prefix="/api")
 
     return app
 

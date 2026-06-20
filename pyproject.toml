@@ -14,7 +14,7 @@ dependencies = [
     "fastapi==0.137.2",
     "uvicorn[standard]==0.49.0",
     "pydantic==2.13.4",
-    "pydantic-settings==2.14.1",
+    "pydantic-settings==2.14.2",
     "google-generativeai==0.8.6",
     "firebase-admin==7.4.0",
     "slowapi==0.1.10",
