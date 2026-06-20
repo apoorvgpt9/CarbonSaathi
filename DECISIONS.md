@@ -1,6 +1,6 @@
 # CarbonSaathi — Project Decisions
 
-> **Status:** Locked at start of Phase 1
+> **Status:** Locked at start of Phase 1; reviewed and current as of end of Phase 4B (2026-06-20)
 > **Owner:** Apoorv Gupta
 > **Challenge:** PromptWars Challenge 3 — Carbon Footprint Awareness Platform
 > **Submission deadline:** Sunday, June 21, 2026, 23:59 IST
@@ -75,7 +75,7 @@
 
 | Layer | Choice | Rationale |
 |---|---|---|
-| Language | Python 3.11 | Native language; better Code Quality score |
+| Language | Python 3.13.7 | Native language; better Code Quality score |
 | Backend | FastAPI | Async, Pydantic v2, auto OpenAPI, pytest-friendly |
 | Frontend | HTMX + Tailwind (via CDN) | Small repo, no build step, server-rendered, accessible |
 | AI (Logger) | Gemini 2.5 Flash via `google-generativeai` | Cheap, fast, supports function calling |
@@ -203,7 +203,7 @@ users/{uid}/recommendations/{recId}
 | **Code Quality** | HIGH | Strict mypy; ruff clean; modular structure (core/models/routes/agents/services); Google-style docstrings; type hints everywhere |
 | **Security** | MED | Firebase Auth verification on all protected routes; slowapi rate limiting; security headers via `secure`; prompt injection detection layer; secrets in Secret Manager; bandit clean; pip-audit clean |
 | **Efficiency** | MED | Async FastAPI throughout; lazy Gemini/Firebase SDK init; `lru_cache` on emission factors; `min-instances=1` on Cloud Run; fire-and-forget Firestore writes |
-| **Testing** | LOW | 80% coverage; mocked AI calls; golden-set per agent; integration tests for full chain |
+| **Testing** | LOW | 95% coverage; mocked AI calls; golden-set per agent; integration tests for full chain |
 | **Accessibility** | LOW | Semantic HTML; ARIA labels; keyboard navigation; WCAG AA contrast; `prefers-reduced-motion` |
 
 ---
@@ -249,7 +249,7 @@ users/{uid}/recommendations/{recId}
 - ✅ Public GitHub repo, single branch, under 10 MB
 - ✅ Deployed Cloud Run URL completes the full user journey (sign in → log → insight → recommendation accept) without errors
 - ✅ README a non-technical reader can understand
-- ✅ All CI checks green: ruff, black, mypy strict, pytest with 80%+ coverage, bandit, pip-audit
+- ✅ All CI checks green: ruff, black, mypy strict, pytest with 95%+ coverage, bandit, pip-audit
 - ✅ Architecture diagram in README
 - ✅ Honest limitations section in README
 - ✅ ADR-style decision log for manual evaluator visibility

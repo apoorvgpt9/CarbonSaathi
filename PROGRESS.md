@@ -1,7 +1,7 @@
 # CarbonSaathi — Build Progress Log
 
 > **Purpose:** Hand off full build state to a new Claude session so quality does not degrade.
-> **Last updated:** End of Phase 1D
+> **Last updated:** End of Phase 4B
 > **Source files of truth:** This file + `DECISIONS.md` (in repo root). Read both at session start.
 
 ---
@@ -43,8 +43,8 @@
 | **Python version** | 3.13.7 (on user's Mac) |
 | **Python command** | `python3` (NOT `python`) |
 | **Coverage target** | **95%** (NOT the default 80% — user explicitly raised this) |
-| **GitHub status** | Local commits only. **Not yet pushed.** User will push by Saturday 09:00 IST. |
-| **Test coverage at end of 1D** | ≥95% on `app/` |
+| **GitHub status** | Local commits only. **Not yet pushed.** User will push once the majority of changes are done. |
+| **Test coverage at end of 4B** | 99.73% on `app/` (line + branch), 315 tests, suite ~1.2s |
 | **Deployment health** | `/api/health` returns `{"status":"ok","version":"0.1.0"}` |
 
 ---
@@ -95,9 +95,9 @@ Output: `DECISIONS.md` in repo root.
 - Workflow-level: `permissions: contents: read`, `concurrency` with `cancel-in-progress: true`, `env.PYTHON_VERSION: "3.13.7"`
 - Each Python job uses `actions/setup-python@v5` with `cache: pip`
 - Docker job uses `docker/setup-buildx-action@v3` + `docker/build-push-action@v5` with GHA cache
-- `README.md` updated with CI status badge (note: `<owner>` placeholder may need final substitution)
+- `README.md` updated with CI status badge (owner set to `apoorvgpt9`)
 
-**Note:** Workflow file is committed locally but **not pushed**, so CI has not actually run on GitHub. This will validate when user pushes (Saturday 09:00 IST target).
+**Note:** Workflow file is committed locally but **not pushed**, so CI has not actually run on GitHub. It will validate when the user pushes (planned once the majority of changes are done).
 
 ### Phase 1D — GCP setup + first Cloud Run deploy
 
@@ -122,6 +122,51 @@ Output: `DECISIONS.md` in repo root.
 - IAM roles on runner SA: `roles/datastore.user`, `roles/secretmanager.secretAccessor`, `roles/logging.logWriter`
 - Plain env vars: `APP_ENV=production`, `LOG_LEVEL=INFO`, `FIREBASE_PROJECT_ID`, `FIREBASE_AUTH_DOMAIN`, `ALLOWED_ORIGINS`, `RATE_LIMIT_PER_MINUTE=30`
 - Secret env vars: `GEMINI_API_KEY=gemini-api-key:latest`, `FIREBASE_API_KEY=firebase-api-key:latest`
+
+### Phase 2 — Domain models + governance + Firestore service
+
+**Files created:**
+- `app/models/shared.py` — `AgentReasoning`, `IsoTimestamp` (UTC-enforcing `AfterValidator`), `Confidence` literal
+- `app/models/user.py` — `IndianState` `StrEnum` (28 states + 8 UTs = 36), `Dietary`/`FridgeClass` literals, `HomeProfile`, `UserProfile`
+- `app/models/activity.py` — `Activity`, `ActivityType`, `TransportData`, `ElectricityData` (kWh-or-bill `model_validator`), `FoodData`
+- `app/models/insight.py` — `Insight`, `InsightType`
+- `app/models/recommendation.py` — `Recommendation`, `RecType`, `Difficulty`
+- `app/models/emission.py` — `FactorEntry`, `FactorLookupResult`
+- `app/core/governance.py` — sync `check_input() -> GovernanceResult`; first-match precedence `empty` → `injection` → `abuse` → `off_topic` → `ok`
+- `app/core/firebase.py` — lazy `@lru_cache` `get_firebase_app()` + `get_firestore_async_client()` (ADC; no init at import)
+- `app/services/firestore_service.py` — async `FirestoreService` (`get_user`, `upsert_user`, `add_activity`, `list_activities`, `add_insight`, `get_recent_insights`, `add_recommendation`, `accept_recommendation`) + `fire_and_forget` helper + cached `get_firestore_service()`
+- Tests: `test_models_*.py`, `test_governance.py`, `test_firebase_init.py`, `test_firestore_service.py`
+
+**Key decisions:** all domain models `frozen=True` / `extra="forbid"`; timestamps tz-aware UTC (naive rejected); `float` for emissions (4-decimal precision documented). 130 tests at commit time.
+
+### Phase 3 — Emission factor data layer
+
+**Files created:**
+- `app/data/state_grid_factors.json`, `transport_factors.json`, `food_factors.json` — every entry carries `value`, `unit`, `source`, `confidence`, `last_verified`, optional `notes`
+- `app/services/emission_service.py` — `EmissionService` loads + validates all three datasets at construction, pure in-memory dict lookups afterwards; cached `get_emission_service()`
+- `scripts/verify_emission_data.py` — data-integrity checks (source length, `estimated` entries require `notes`, all 36 states present)
+- Tests: `test_emission_service.py`, `test_models_emission.py`, `test_verify_emission_data.py`
+
+**Key decisions:** every `IndianState` member must have a grid entry (lookup raises `KeyError` otherwise — a data bug); all emission maths is deterministic in the service, never produced by the model.
+
+### Phase 4A — Base agent + Gemini client + Logger
+
+**Files created:**
+- `app/core/gemini.py` — lazy `get_gemini_client()` → `GenerativeModelFactory` exposing `.flash()` / `.pro()`; `genai.configure` runs once per process
+- `app/agents/base.py` — `BaseAgent` (governance gate, monotonic latency ms, `AgentReasoning` assembly, structured logging)
+- `app/agents/logger_agent.py` — `LoggerAgent` (Flash + function calling); `LoggerOutcome` discriminated union (`success` / `rejected` / `failed`)
+- `app/agents/prompts/logger_v1.py` — `SYSTEM_INSTRUCTION` + three `FunctionDeclaration`s; mode/category enums sourced from `EmissionService` so schemas can't drift from data
+- Tests: `test_core_gemini.py`, `test_agents_base.py`, `test_agents_logger.py` + logger golden fixtures
+
+### Phase 4B — Analyst + Coach + integration chain
+
+**Files created:**
+- `app/agents/analyst_agent.py` — `AnalystAgent` (Pro + JSON `response_schema`), `bucket_by_week`, `AnalystOutcome` (`success` / `empty` / `failed`); insights grounded to real activity IDs only
+- `app/agents/coach_agent.py` — `CoachAgent` (Pro + JSON `response_schema`), typed `SavingBasis` union, deterministic `_evaluate_basis`; `CoachOutcome` (`success` / `empty` / `failed`)
+- `app/agents/prompts/analyst_v1.py`, `coach_v1.py` — system instructions, response schemas, `build_user_prompt`
+- Tests: `test_agents_analyst.py`, `test_agents_coach.py`, `test_integration_agent_chain.py` + analyst/coach golden fixtures
+
+**Key decisions:** agents return typed outcomes — governance rejections and model failures are values, not exceptions; Gemini only extracts/phrases, every emission and saving figure is computed locally; every output carries a populated `AgentReasoning` trace.
 
 ---
 
@@ -163,7 +208,7 @@ Cloud Run URL is not known until after first deploy. The current `scripts/03_dep
 
 ### Python version
 
-User has Python 3.13.7. All configs target 3.13. Earlier draft plans referenced 3.11 — those references have all been corrected, but if anything in the file references 3.11, flag it as stale.
+User has Python 3.13.7. All configs target 3.13. Earlier draft plans referenced 3.11; the stale `DECISIONS.md` § 6 reference was corrected at end of Phase 4B. If any 3.11 reference resurfaces, flag it as stale.
 
 ### Use `python3`, not `python`
 
@@ -177,7 +222,7 @@ These were established during Phase 1. Continue applying them.
 
 ### User is NOT pushing to GitHub during the build
 
-Local commits only. Hard deadline to push everything: **Saturday 09:00 IST**. CI workflow exists but has never actually run yet (only push triggers it). User acknowledged the risks (no CI validation, single point of failure, batched-push debug pain) and chose this path.
+Local commits only. The user will push once the majority of changes are done (not on a fixed clock time). CI workflow exists but has never actually run yet (only push triggers it). User acknowledged the risks (no CI validation until the batched push, single point of failure, batched-push debug pain) and chose this path.
 
 ### Deployment from local, not from GitHub
 
@@ -268,55 +313,9 @@ Every Copilot prompt MUST tell Copilot to output a numbered plan first and **STO
 
 ## Pending phases
 
-Original schedule was tight; we are behind it because of debug iterations on mypy, IAM race, ALLOWED_ORIGINS bug, and gcloud syntax. Re-prioritize when next session starts.
+Phases 2, 3, 4A, and 4B are complete (see § "Completed phases" above). Phase 5 is next. The original 48h schedule slipped on debug iterations (mypy stubs, IAM race, ALLOWED_ORIGINS, gcloud syntax); re-prioritise the remaining phases against the Sunday 18:00 IST target.
 
-### Phase 2 — Domain models + governance (NEXT)
-
-**Goal:** Pydantic models for all 4 entities + governance module (scope lock + prompt injection detection) + Firestore service wrapper.
-
-**Files to create:**
-- `app/models/user.py` — `UserProfile`, `HomeProfile`, dietary/state enums
-- `app/models/activity.py` — `Activity`, `ActivityType` enum (transport, electricity, food), `Confidence` enum
-- `app/models/insight.py` — `Insight`, `InsightType` enum
-- `app/models/recommendation.py` — `Recommendation`, `RecType` enum, `Difficulty` enum
-- `app/models/shared.py` — common types (e.g., `AgentReasoning`)
-- `app/core/governance.py` — scope check + prompt injection detection layer
-- `app/services/firestore_service.py` — async wrapper around firebase-admin Firestore (fire-and-forget writes; the lazy SDK init pattern, NOT at module import)
-- `app/core/firebase.py` — Firebase Admin SDK init (lazy via `get_firestore_client()` with `lru_cache`)
-- Tests: `tests/test_models_*.py`, `tests/test_governance.py`, `tests/test_firestore_service.py` (mocked)
-
-**Schema:** Follow the data model exactly as specified in `DECISIONS.md` § 8. Use `datetime` (UTC) for timestamps, `Decimal` or `float` for emission values (likely `float` is fine, document precision in docstring), `Literal` types for the enum-like string fields.
-
-**Governance module must:**
-- Reject prompts not related to personal carbon footprint (food/transport/electricity)
-- Detect common prompt injection patterns (`ignore previous`, role override attempts, system prompt leaks)
-- Return a typed result: `GovernanceResult(allowed: bool, reason: str | None)`
-- Be lightweight (regex + small allowlist/blocklist of phrases); no LLM call for this layer
-
-**Firestore service:**
-- Async only
-- Lazy SDK init (no Firebase Admin initialized at import time)
-- Fire-and-forget writes via `asyncio.create_task` + `.catch()` pattern (don't block response)
-- Methods to add: `get_user`, `upsert_user`, `add_activity`, `list_activities(user_id, limit, before)`, `add_insight`, `get_recent_insights(user_id)`, `add_recommendation`, `accept_recommendation(rec_id, user_id)`
-
-### Phase 3 — Emission factor data layer
-
-**Goal:** Curated India-specific emission factor JSON files + lookup service with caching.
-
-**Files to create:**
-- `app/data/state_grid_factors.json` — CEA state-wise electricity grid emission factors (kg CO₂e per kWh)
-- `app/data/transport_factors.json` — per mode (auto-rickshaw, metro, bus, taxi/Uber, two-wheeler, four-wheeler, walking, WFH); kg CO₂e per km
-- `app/data/food_factors.json` — per category (veg meal, non-veg meal, dairy, ...); kg CO₂e per serving
-- `app/services/emission_service.py` — lookup service with `@lru_cache`, returns value + source citation + confidence tier
-- `scripts/verify_emission_data.py` — runs at CI optionally; checks every factor has a source string
-
-**Source attribution rules:** Every factor entry must include `source` (string), `confidence` (`high`/`medium`/`estimated`), and `last_verified` (ISO date). Cite real sources: CEA CO₂ Baseline Database, ICCT, India GHG Inventory, FAO. Be honest about confidence — "estimated" is fine and shown to the user.
-
-### Phase 4 — Agent system
-
-**This is the phase that needs Opus 4.8.** Logger (Gemini 2.5 Flash + function calling), Analyst (Gemini 2.5 Pro), Coach (Gemini 2.5 Pro). Each agent: prompt versioning, governance integration, structured output schema, mocked tests with golden examples.
-
-### Phase 5 — API routes
+### Phase 5 — API routes (NEXT)
 
 `POST /api/activities`, `GET /api/activities`, `GET /api/insights`, `GET /api/insights/stream` (SSE), `GET /api/recommendations`, `POST /api/recommendations/{id}/accept`, `GET /api/dashboard`, `POST /api/onboarding`, `POST /api/auth/verify`, `GET /api/users/me`.
 
@@ -365,10 +364,10 @@ Only if Submission #1 reveals a clear, fixable gap on a specific criterion AND w
 ## Open questions for the next session
 
 1. **Current time / schedule recovery.** We are behind schedule because of debug iterations. The user has not stated the current time. New session should ask "what time is it now?" to re-plan remaining phases against the Sunday 18:00 IST submission target.
-2. **Should ALLOWED_ORIGINS be tightened now or in Phase 6?** Currently set to the deployed URL after `services update`. When the UI ships, this stays correct. No action needed unless something changes.
-3. **GitHub username placeholder in README badge.** The CI badge in README.md has `<owner>` placeholder unless the user already ran the sed substitution. New session: ask user to confirm.
-4. **Push timing.** Hard deadline is Saturday 09:00 IST. New session should remind user proactively.
-5. **Phase 4 starts to consume Gemini quota.** Confirm Gemini API key in Secret Manager works before Phase 4 build begins.
+2. **ALLOWED_ORIGINS tightening.** Currently set to the deployed URL after `services update`. When the UI ships in Phase 6 this stays correct. No action needed unless something changes.
+3. **README CI badge owner — RESOLVED.** The badge points at `apoorvgpt9/carbonsaathi`; no placeholder remains.
+4. **Push timing.** The user pushes once the majority of changes are done (no fixed clock deadline). CI first runs at that batched push.
+5. **Live Gemini calls deferred to Phase 5.** Phases 4A/4B shipped on fully mocked Gemini; no real quota was consumed. Confirm the Gemini API key in Secret Manager works before Phase 5 wires the agents into live routes.
 
 ---
 
@@ -381,10 +380,10 @@ Continuing CarbonSaathi PromptWars Challenge 3 build.
 
 Attached:
 1. DECISIONS.md — locked project spec (read first)
-2. PROGRESS.md — build state through Phase 1D (read second)
+2. PROGRESS.md — build state through Phase 4B (read second)
 
-Status: Phase 1D green, deployed and verified.
-Ready for Phase 2 (domain models + governance + Firestore service).
+Status: Phase 4B green (315 tests, 99.73% coverage). Deployed through Phase 1D.
+Ready for Phase 5 (API routes).
 
 User preferences are in system context — push back first, no glazing, lead with the most useful thing.
 
