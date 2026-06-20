@@ -379,3 +379,68 @@ def test_get_firestore_service_returns_same_instance() -> None:
         s2 = get_firestore_service()
         assert s1 is s2
     get_firestore_service.cache_clear()
+
+
+# ---------------------------------------------------------------------------
+# get_activity
+# ---------------------------------------------------------------------------
+
+
+async def test_get_activity_found() -> None:
+    act = _activity(aid="act-42", uid="u1")
+    client = _make_client(snapshot_exists=True, snapshot_data=act.model_dump(mode="json"))
+    result = await FirestoreService(client=client).get_activity("u1", "act-42")
+    assert result is not None
+    assert result.id == "act-42"
+
+
+async def test_get_activity_not_found(svc: FirestoreService) -> None:
+    result = await svc.get_activity("u1", "ghost-id")
+    assert result is None
+
+
+async def test_get_activity_uid_mismatch() -> None:
+    # Activity stored with user_id="u2" but requested by "u1" — must return None.
+    act = _activity(aid="act-99", uid="u2")
+    client = _make_client(snapshot_exists=True, snapshot_data=act.model_dump(mode="json"))
+    result = await FirestoreService(client=client).get_activity("u1", "act-99")
+    assert result is None
+
+
+# ---------------------------------------------------------------------------
+# list_activities_in_range
+# ---------------------------------------------------------------------------
+
+
+async def test_list_activities_in_range_empty(svc: FirestoreService) -> None:
+    start = datetime(2026, 6, 14, tzinfo=UTC)
+    end = datetime(2026, 6, 21, tzinfo=UTC)
+    result = await svc.list_activities_in_range("u1", start, end)
+    assert result == []
+
+
+async def test_list_activities_in_range_with_results() -> None:
+    act = _activity()
+    act_data = act.model_dump(mode="json")
+
+    async def _stream_one() -> AsyncGenerator[Any]:
+        snap = MagicMock()
+        snap.to_dict.return_value = act_data
+        yield snap
+
+    client = _make_client()
+    query = MagicMock()
+    query.limit.return_value = query
+    query.where.return_value = query
+    query.stream = _stream_one
+
+    sub_col = client.collection.return_value.document.return_value.collection.return_value
+    sub_col.order_by.return_value = query
+
+    start = datetime(2026, 6, 14, tzinfo=UTC)
+    end = datetime(2026, 6, 21, tzinfo=UTC)
+    result = await FirestoreService(client=client).list_activities_in_range("u1", start, end)
+    assert len(result) == 1
+    assert result[0].id == "a1"
+    # Verify that .where() was called twice (start and end bounds).
+    assert query.where.call_count == 2

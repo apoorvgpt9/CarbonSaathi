@@ -271,6 +271,74 @@ class FirestoreService:
         await doc_ref.update({"accepted": True})
         return True
 
+    async def get_activity(self, uid: str, activity_id: str) -> Activity | None:
+        """Fetch a single activity by ID, scoped to the owning user.
+
+        Returns ``None`` both when the document does not exist and when the
+        stored ``user_id`` field does not match ``uid``, so that callers cannot
+        distinguish between "not found" and "owned by another user".
+
+        Args:
+            uid: Firebase UID of the requesting user.
+            activity_id: Firestore document ID of the activity.
+
+        Returns:
+            The :class:`~app.models.activity.Activity` if found and owned by
+            ``uid``, else ``None``.
+        """
+        doc_ref = (
+            self._client.collection("users")
+            .document(uid)
+            .collection("activities")
+            .document(activity_id)
+        )
+        snapshot = await doc_ref.get()
+        if not snapshot.exists:
+            return None
+        data: dict[str, Any] = snapshot.to_dict() or {}
+        if not data:
+            return None
+        activity = Activity.model_validate(data)
+        if activity.user_id != uid:
+            return None
+        return activity
+
+    async def list_activities_in_range(
+        self,
+        uid: str,
+        start: datetime,
+        end: datetime,
+        limit: int = 200,
+    ) -> list[Activity]:
+        """Return activities whose timestamp falls in [start, end).
+
+        Ordered by timestamp descending.  Used primarily by the dashboard to
+        aggregate emissions over a rolling 7-day IST window.
+
+        Args:
+            uid: Firebase UID of the target user.
+            start: Inclusive lower bound (UTC, timezone-aware).
+            end: Exclusive upper bound (UTC, timezone-aware).
+            limit: Maximum number of activities to return (default 200).
+
+        Returns:
+            A list of :class:`~app.models.activity.Activity` objects ordered
+            by timestamp descending, length ≤ ``limit``.
+        """
+        col_ref = self._client.collection("users").document(uid).collection("activities")
+        query = (
+            col_ref.order_by("timestamp", direction="DESCENDING")
+            .where(filter=FieldFilter("timestamp", ">=", start))
+            .where(filter=FieldFilter("timestamp", "<", end))
+            .limit(limit)
+        )
+        activities: list[Activity] = []
+        async for doc in query.stream():
+            data: dict[str, Any] = doc.to_dict() or {}
+            if data:
+                activities.append(Activity.model_validate(data))
+        return activities
+
 
 # ---------------------------------------------------------------------------
 # Module-level cached accessor

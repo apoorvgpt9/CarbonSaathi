@@ -8,6 +8,8 @@ from unittest.mock import AsyncMock
 import httpx
 import pytest
 
+from app.agents.factories import get_logger_agent
+from app.agents.logger_agent import LoggerAgent
 from app.core.auth import CurrentUser, verify_firebase_token
 from app.core.config import get_settings
 from app.services.firestore_service import FirestoreService, get_firestore_service
@@ -37,6 +39,12 @@ def firestore_service_mock() -> AsyncMock:
 
 
 @pytest.fixture
+def logger_agent_mock() -> AsyncMock:
+    """Return an ``AsyncMock`` standing in for :class:`LoggerAgent`."""
+    return AsyncMock(spec=LoggerAgent)
+
+
+@pytest.fixture
 def current_user() -> CurrentUser:
     """Return the canonical authenticated user used by route tests."""
     return CurrentUser(
@@ -50,19 +58,22 @@ def current_user() -> CurrentUser:
 @pytest.fixture
 async def client_with_user(
     firestore_service_mock: AsyncMock,
+    logger_agent_mock: AsyncMock,
     current_user: CurrentUser,
 ) -> AsyncIterator[httpx.AsyncClient]:
-    """Yield an ASGI client with auth and Firestore dependencies overridden.
+    """Yield an ASGI client with auth, Firestore, and LoggerAgent deps overridden.
 
     The ``verify_firebase_token`` dependency is replaced with one returning
-    ``current_user`` and ``get_firestore_service`` with one returning
-    ``firestore_service_mock``.  All overrides are cleared on teardown.
+    ``current_user``, ``get_firestore_service`` with one returning
+    ``firestore_service_mock``, and ``get_logger_agent`` with one returning
+    ``logger_agent_mock``.  All overrides are cleared on teardown.
     """
     from app.main import create_app
 
     app = create_app()
     app.dependency_overrides[verify_firebase_token] = lambda: current_user
     app.dependency_overrides[get_firestore_service] = lambda: firestore_service_mock
+    app.dependency_overrides[get_logger_agent] = lambda: logger_agent_mock
     transport = httpx.ASGITransport(app=app)
     try:
         async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as c:
