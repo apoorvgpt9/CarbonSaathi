@@ -28,6 +28,7 @@ from google.cloud.firestore import AsyncClient, FieldFilter
 
 from app.core.firebase import get_firestore_async_client
 from app.models.activity import Activity
+from app.models.generation_state import GenerationState
 from app.models.insight import Insight
 from app.models.recommendation import Recommendation
 from app.models.user import UserProfile
@@ -271,6 +272,30 @@ class FirestoreService:
         await doc_ref.update({"accepted": True})
         return True
 
+    async def get_recent_recommendations(
+        self,
+        user_id: str,
+        limit: int = 10,
+    ) -> list[Recommendation]:
+        """Return the most recently generated recommendations for a user.
+
+        Args:
+            user_id: Firebase UID of the target user.
+            limit: Maximum number of recommendations to return (default 10).
+
+        Returns:
+            A list of :class:`~app.models.recommendation.Recommendation` objects
+            ordered by ``generated_at`` descending, length <= ``limit``.
+        """
+        col_ref = self._client.collection("users").document(user_id).collection("recommendations")
+        query = col_ref.order_by("generated_at", direction="DESCENDING").limit(limit)
+        recommendations: list[Recommendation] = []
+        async for doc in query.stream():
+            data: dict[str, Any] = doc.to_dict() or {}
+            if data:
+                recommendations.append(Recommendation.model_validate(data))
+        return recommendations
+
     async def get_activity(self, uid: str, activity_id: str) -> Activity | None:
         """Fetch a single activity by ID, scoped to the owning user.
 
@@ -338,6 +363,53 @@ class FirestoreService:
             if data:
                 activities.append(Activity.model_validate(data))
         return activities
+
+    # ------------------------------------------------------------------
+    # Generation state
+    # ------------------------------------------------------------------
+
+    async def get_generation_state(self, uid: str) -> GenerationState | None:
+        """Fetch the insight-pipeline generation-state document for a user.
+
+        Args:
+            uid: Firebase UID of the target user.
+
+        Returns:
+            The :class:`~app.models.generation_state.GenerationState` if a prior
+            run has been recorded, else ``None``.
+        """
+        doc_ref = (
+            self._client.collection("users")
+            .document(uid)
+            .collection("state")
+            .document("generation")
+        )
+        snapshot = await doc_ref.get()
+        if not snapshot.exists:
+            return None
+        data: dict[str, Any] = snapshot.to_dict() or {}
+        if not data:
+            return None
+        return GenerationState.model_validate(data)
+
+    async def set_generation_state(self, uid: str, state: GenerationState) -> None:
+        """Create or overwrite the generation-state document for a user.
+
+        Args:
+            uid: Firebase UID of the owning user.
+            state: The :class:`~app.models.generation_state.GenerationState` to
+                persist (idempotent ``set``).
+
+        Returns:
+            None.
+        """
+        doc_ref = (
+            self._client.collection("users")
+            .document(uid)
+            .collection("state")
+            .document("generation")
+        )
+        await doc_ref.set(state.model_dump(mode="json"))
 
 
 # ---------------------------------------------------------------------------

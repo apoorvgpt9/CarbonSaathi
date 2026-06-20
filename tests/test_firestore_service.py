@@ -11,6 +11,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from app.models.activity import Activity
+from app.models.generation_state import GenerationState
 from app.models.insight import Insight
 from app.models.recommendation import Recommendation
 from app.models.user import HomeProfile, IndianState, UserProfile
@@ -397,6 +398,86 @@ async def test_get_activity_found() -> None:
 async def test_get_activity_not_found(svc: FirestoreService) -> None:
     result = await svc.get_activity("u1", "ghost-id")
     assert result is None
+
+
+# ---------------------------------------------------------------------------
+# get_recent_recommendations
+# ---------------------------------------------------------------------------
+
+
+async def test_get_recent_recommendations_empty(svc: FirestoreService) -> None:
+    result = await svc.get_recent_recommendations("u1")
+    assert result == []
+
+
+async def test_get_recent_recommendations_with_results() -> None:
+    rec = _rec()
+    rec_data = rec.model_dump(mode="json")
+
+    async def _stream_one() -> AsyncGenerator[Any]:
+        empty = MagicMock()
+        empty.to_dict.return_value = {}
+        yield empty  # skipped (no data)
+        snap = MagicMock()
+        snap.to_dict.return_value = rec_data
+        yield snap
+
+    client = _make_client()
+    query = MagicMock()
+    query.limit.return_value = query
+    query.stream = _stream_one
+
+    sub_col = client.collection.return_value.document.return_value.collection.return_value
+    sub_col.order_by.return_value = query
+
+    result = await FirestoreService(client=client).get_recent_recommendations("u1")
+    assert len(result) == 1
+    assert result[0].id == "r1"
+
+
+# ---------------------------------------------------------------------------
+# generation state
+# ---------------------------------------------------------------------------
+
+
+def _gen_state(uid: str = "u1") -> GenerationState:
+    return GenerationState(
+        uid=uid,
+        last_completed_at=_utc_now(),
+        analyst_status="success",
+        coach_status="success",
+    )
+
+
+async def test_get_generation_state_found() -> None:
+    state = _gen_state()
+    client = _make_client(snapshot_exists=True, snapshot_data=state.model_dump(mode="json"))
+    result = await FirestoreService(client=client).get_generation_state("u1")
+    assert result is not None
+    assert result.uid == "u1"
+    assert result.analyst_status == "success"
+
+
+async def test_get_generation_state_not_found(svc: FirestoreService) -> None:
+    result = await svc.get_generation_state("ghost")
+    assert result is None
+
+
+async def test_get_generation_state_empty_document_returns_none() -> None:
+    client = _make_client(snapshot_exists=True, snapshot_data={})
+    result = await FirestoreService(client=client).get_generation_state("u1")
+    assert result is None
+
+
+async def test_set_generation_state_writes_document() -> None:
+    client = _make_client()
+    sub_doc_ref = (
+        client.collection.return_value.document.return_value.collection.return_value.document.return_value
+    )
+    sub_doc_ref.set = AsyncMock(return_value=None)
+
+    await FirestoreService(client=client).set_generation_state("u1", _gen_state())
+    sub_doc_ref.set.assert_awaited_once()
 
 
 async def test_get_activity_uid_mismatch() -> None:

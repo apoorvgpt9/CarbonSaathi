@@ -8,7 +8,9 @@ from unittest.mock import AsyncMock
 import httpx
 import pytest
 
-from app.agents.factories import get_logger_agent
+from app.agents.analyst_agent import AnalystAgent
+from app.agents.coach_agent import CoachAgent
+from app.agents.factories import get_analyst_agent, get_coach_agent, get_logger_agent
 from app.agents.logger_agent import LoggerAgent
 from app.core.auth import CurrentUser, verify_firebase_token
 from app.core.config import get_settings
@@ -45,6 +47,18 @@ def logger_agent_mock() -> AsyncMock:
 
 
 @pytest.fixture
+def analyst_agent_mock() -> AsyncMock:
+    """Return an ``AsyncMock`` standing in for :class:`AnalystAgent`."""
+    return AsyncMock(spec=AnalystAgent)
+
+
+@pytest.fixture
+def coach_agent_mock() -> AsyncMock:
+    """Return an ``AsyncMock`` standing in for :class:`CoachAgent`."""
+    return AsyncMock(spec=CoachAgent)
+
+
+@pytest.fixture
 def current_user() -> CurrentUser:
     """Return the canonical authenticated user used by route tests."""
     return CurrentUser(
@@ -59,14 +73,17 @@ def current_user() -> CurrentUser:
 async def client_with_user(
     firestore_service_mock: AsyncMock,
     logger_agent_mock: AsyncMock,
+    analyst_agent_mock: AsyncMock,
+    coach_agent_mock: AsyncMock,
     current_user: CurrentUser,
 ) -> AsyncIterator[httpx.AsyncClient]:
-    """Yield an ASGI client with auth, Firestore, and LoggerAgent deps overridden.
+    """Yield an ASGI client with auth, Firestore, and agent deps overridden.
 
     The ``verify_firebase_token`` dependency is replaced with one returning
     ``current_user``, ``get_firestore_service`` with one returning
-    ``firestore_service_mock``, and ``get_logger_agent`` with one returning
-    ``logger_agent_mock``.  All overrides are cleared on teardown.
+    ``firestore_service_mock``, and the Logger/Analyst/Coach agent factories
+    with ones returning their respective mocks.  All overrides are cleared on
+    teardown.
     """
     from app.main import create_app
 
@@ -74,6 +91,8 @@ async def client_with_user(
     app.dependency_overrides[verify_firebase_token] = lambda: current_user
     app.dependency_overrides[get_firestore_service] = lambda: firestore_service_mock
     app.dependency_overrides[get_logger_agent] = lambda: logger_agent_mock
+    app.dependency_overrides[get_analyst_agent] = lambda: analyst_agent_mock
+    app.dependency_overrides[get_coach_agent] = lambda: coach_agent_mock
     transport = httpx.ASGITransport(app=app)
     try:
         async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as c:
