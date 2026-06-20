@@ -55,7 +55,10 @@ def test_get_firestore_async_client_is_cached() -> None:
     """Calling get_firestore_async_client() twice returns the same object."""
     fb: Any = _reload_firebase_module()
     mock_client = MagicMock()
-    with patch("google.cloud.firestore.AsyncClient", return_value=mock_client):
+    # Patch the name as bound inside the firebase module (it does
+    # ``from google.cloud.firestore import AsyncClient``), so no real client is
+    # constructed and no Application Default Credentials are required.
+    with patch("app.core.firebase.AsyncClient", return_value=mock_client):
         fb.get_firestore_async_client.cache_clear()
         c1 = fb.get_firestore_async_client()
         c2 = fb.get_firestore_async_client()

@@ -1,7 +1,7 @@
 # CarbonSaathi — Build Progress Log
 
 > **Purpose:** Hand off full build state to a new Claude session so quality does not degrade.
-> **Last updated:** End of Phase 5B (Saturday)
+> **Last updated:** End of Phase 5C (Saturday mid-afternoon IST)
 > **Source files of truth:** This file + `DECISIONS.md` (in repo root). Read both at session start.
 
 ---
@@ -13,7 +13,7 @@
 3. **Do not re-derive decisions already locked.** If something here conflicts with the user's new message, ask before overriding.
 4. Maintain the established workflow conventions (see § "Operational conventions" below)
 5. Maintain the established phase prompt template (see § "Phase prompt template" below)
-6. Continue from where § "Pending phases" picks up. Phase 5C (insights + recs + SSE) is next.
+6. Continue from where § "Pending phases" picks up. Phase 6 (HTMX + Tailwind frontend) is next.
 
 ---
 
@@ -44,11 +44,12 @@
 | **Python version** | 3.13.7 (on user's Mac) |
 | **Python command** | `python3` (NOT `python`) |
 | **Local dev port** | **8080** (NOT 8000) — Cloud Run convention via `PORT` env var |
-| **Coverage target** | **95%** (line + branch). Current actual after 5B: ~99.7% |
+| **Coverage target** | **95%** (line + branch). Current actual after 5C: **99.66%** |
+| **Test count** | **415 tests, ~1.58s** total runtime |
 | **GitHub status** | Open question — confirm with user at session start whether push happened |
 | **Deployment health** | `/api/health` returns `{"status":"ok","version":"0.1.0"}` (last verified Phase 1D; code changes since then are NOT yet deployed — Phase 9 re-deploys) |
-| **Phases complete** | 1A, 1B, 1C, 1D, 2, 3, 4A, 4B, **5A, 5B** |
-| **Next phase** | **5C — Insights + recommendations routes + SSE reasoning stream** |
+| **Phases complete** | 1A, 1B, 1C, 1D, 2, 3, 4A, 4B, 5A, 5B, **5C** |
+| **Next phase** | **6 — Frontend (HTMX + Tailwind, Sonnet 4.6)** |
 
 ---
 
@@ -197,6 +198,45 @@ Output: `DECISIONS.md` in repo root.
 
 **Validation gauntlet completed (12 stages):** static analysis, file inventory, full suite + coverage, live HTTP probes against port 8080, slashless convention acid test (5.4/5.5 confirm slashed form 404s, no rogue 307), uniform-401 auth-failure body across every protected route (content-length 34 on all), security headers preserved on 200/401/404.
 
+### Phase 5C — Insights + recommendations routes + SSE reasoning stream
+
+**Goal achieved:** Single generator endpoint orchestrates Analyst → Coach, with SSE reasoning stream as the rubric differentiator. Read-only listers for cached results. Recommendation accept mutation.
+
+**Spec-vs-reality reconciliations (DECISIONS.md §15 #16):**
+- `AnalystAgent.__init__` takes **only** `gemini_factory`, NOT `emission_service`. Coach takes both. Get this right in any future factory wiring.
+- Agent method signatures are keyword-only with `user_id` (NOT `uid`) param: `analyst.generate_insights(*, activities, user_id, now=None)` — no profile param. `coach.generate_recommendations(*, profile, activities, insights, user_id, now=None)` — param is `activities`, not `recent_activities`.
+- `AnalystSuccess` / `CoachSuccess` carry **no top-level `agent_reasoning`**. Reasoning is per-item on `outcome.insights[0].agent_reasoning.reasoning_steps`. The orchestrator uses first-item aggregation (all items in a single Gemini call share the same reasoning trace — denormalized across items because §8's data model has nowhere else to put it) with a defensive `if outcome.insights:` guard before indexing.
+- `FirestoreService` already had `add_insight`, `get_recent_insights`, `add_recommendation`, `accept_recommendation` (added during Phase 4B integration test scaffolding). Only **3** new methods added in 5C: `get_recent_recommendations`, `get_generation_state`, `set_generation_state`.
+- `accept_recommendation` stays **non-transactional**. Path-scoping under `users/{uid}/recommendations/` makes cross-user writes impossible; same-user double-accept is idempotent at `accepted=True`. Transaction would be theatre.
+
+**Files created:**
+- `app/models/generation_state.py` — `GenerationState` frozen model with `analyst_status: Literal["success","empty","failed"]` + `coach_status: Literal["success","empty","failed","skipped"]` (NO overall `status` field), `last_completed_at: IsoTimestamp`, `empty_reason`, `failed_reason`. Stored at `users/{uid}/state/generation` (collection `state`, doc `generation`).
+- `app/services/staleness.py` — `is_pipeline_stale()` pure function + `StalenessResult` frozen model. Five branches: `no_prior_run`, `ist_day_change`, `new_activity_since_last_run`, `analyst_empty_ttl_expired`, `coach_empty_ttl_expired`. Branches 4 and 5 are **independent OR `if` statements** (not if/elif) — `analyst_status="success" AND coach_status="empty"` correctly hits branch 5. Local `IST = ZoneInfo("Asia/Kolkata")` constant per DECISIONS.md §14.5.
+- `app/services/orchestrator.py` — `run_insight_pipeline()` async generator + `OrchestratorEvent` discriminated union (`PhaseStart` / `ReasoningStep` / `PhaseComplete` / `Done`, each `frozen=True, extra="forbid"`, with `event: Literal[...]` discriminator). Pure orchestration logic — no FastAPI imports, no SSE knowledge. Cached path emits two `PhaseComplete(status="cached")` events + `Done` with cached insights/recs fetched from Firestore; **no `PhaseStart` events on cached path**; **no `set_generation_state` call on cached path** (asserted in tests).
+- `app/routes/insights.py` — `GET /api/insights` (read-only lister) + `GET /api/insights/stream` (content-negotiated generator). DTOs: `InsightListResponse`. Module constant `SSE_INTER_EVENT_DELAY_S = 0.08` (tests monkeypatch to 0). Content negotiation: JSON only when `"application/json" in accept and "text/event-stream" not in accept`; otherwise SSE (no Accept, `*/*` httpx default, `text/event-stream`, AND both-present all → SSE). Profile fetched at route layer; if `firestore.get_user(uid)` returns None, raises `HTTPException(500, "Server error")` with structlog ERROR `event="route.profile_missing"`.
+- `app/routes/recommendations.py` — `GET /api/recommendations` (read-only) + `POST /api/recommendations/{rec_id}/accept`. DTOs: `RecommendationListResponse`, `AcceptResponse`. 404 with `{"detail":"Recommendation not found"}` on missing (same message for nonexistent and other-user — path-scoped, no info leak).
+- `tests/_sse.py` — minimal `parse_sse(text) -> list[SSEEvent]` helper.
+- `tests/test_services_orchestrator.py`, `tests/test_services_staleness.py`, `tests/test_routes_insights.py`, `tests/test_routes_recommendations.py` — full coverage of all 6 orchestrator flows + all 6 staleness branches + content negotiation + auth + cached path.
+
+**Files modified:**
+- `app/agents/factories.py` — added `get_analyst_agent()` (gemini_factory only) and `get_coach_agent()` (gemini_factory + emission_service), both `@lru_cache(maxsize=1)`.
+- `app/services/firestore_service.py` — added 3 methods only (`get_recent_recommendations`, `get_generation_state`, `set_generation_state`). All follow existing patterns (AsyncClient, `order_by(..., DESCENDING)` where ordering matters, `model_validate` on read, `model_dump(mode="json")` on write, structured logging on error).
+- `app/main.py` — registered `insights.router` and `recommendations.router` under `/api`.
+- `tests/conftest.py` — added `analyst_agent_mock` and `coach_agent_mock` fixtures; extended `client_with_user` to override `get_analyst_agent` and `get_coach_agent`.
+- `tests/test_firestore_service.py`, `tests/test_agents_factories.py` — appended coverage tests for new methods/factories.
+
+**Coverage delta:** ~99.7% → **99.66%** (415 tests, 1.58s). All 5 new Phase 5C modules at **100% coverage**. The 5 remaining `firestore_service.py` partials are pre-existing defensive branches, untouched by this phase.
+
+**Validation gauntlet status (12 stages):**
+- Stages 0–4: passed
+- Stage 5 (functional acid tests): passed AFTER fixing `curl -sI` HEAD-default trap (see Critical gotchas below) — all 8 sub-checks return expected status/length/content-type
+- Stage 6 (auth consistency loop across all 4 routes × 4 bad-header variants): **NOT run** — open for Phase 6 session or before submission
+- Stage 7 (grep contracts): partially run — 7.3 (no `EventSource`) and 7.10 (orchestrator ERROR logging) not explicitly verified; slashless invariant confirmed via direct file reads of both new route files
+- Stage 8 (security headers): confirmed clean via Stage 5's 401 response header dump (CSP, HSTS, X-Frame-Options, X-Content-Type-Options all present; X-Accel-Buffering correctly absent on 401)
+- Stage 9 (shutdown): pending
+- Stage 10 (PROGRESS.md update): completed via this session
+- Stage 11 (commit + push + CI): **NOT done** — see Open questions
+
 ---
 
 ## Decisions made during build (not in DECISIONS.md original spec)
@@ -257,12 +297,33 @@ Analyst receives `{"this_week": [...], "last_week": [...], "earlier": [...]}` al
 ### JSON output for Analyst/Coach via `response_mime_type` + fallback (Phase 4B)
 Pro models accept `generation_config={"response_mime_type": "application/json"}` and `response_schema` in newer SDKs. Use both if available. Fallback: drop `response_schema`, keep `response_mime_type`, add explicit "Output valid JSON only" to system prompt, strip ``` fences before `json.loads`. JSONDecodeError → typed `*Failed`.
 
+### Single generator endpoint, content-negotiated (Phase 5C)
+DECISIONS.md §9 originally had three generation entry points (`/api/insights`, `/api/insights/stream`, `/api/recommendations`). Phase 5C collapsed this to ONE: `/api/insights/stream`. `/api/insights` and `/api/recommendations` are read-only listers. The stream endpoint does content negotiation: SSE for `text/event-stream`, single JSON for `application/json`-only. Removes cache-coherence bugs and double-generation under burst load. See §15 #11, #12.
+
+### Two independent empty-TTL branches in staleness (Phase 5C)
+`is_pipeline_stale` has two parallel `if` statements (not if/elif): `analyst_status == "empty" AND age > 10min` AND `coach_status == "empty" AND age > 10min`. Handles the post-onboarding-without-new-activity edge case where Coach was empty (not-onboarded) and user has since onboarded but not logged. Independent branches mean `analyst_status="success" AND coach_status="empty"` correctly returns stale on the second branch. See §15 #13.
+
+### Cached path emits no PhaseStart and no set_generation_state (Phase 5C)
+When `is_pipeline_stale` returns False, the orchestrator fetches cached insights + recommendations from Firestore and yields: two `PhaseComplete(status="cached")` events + one `Done`. No `PhaseStart` (no phase actually runs). No `set_generation_state` call (cached state is what it was). Tests assert zero agent calls AND zero `set_generation_state` calls on this path.
+
+### First-item reasoning aggregation with defensive guard (Phase 5C)
+`AnalystSuccess`/`CoachSuccess` carry no top-level `agent_reasoning`. Reasoning lives per-item on `outcome.insights[0].agent_reasoning.reasoning_steps`. Since one Gemini call produces 1-3 items sharing one trace (denormalized across items by data model constraint), first-item is the canonical reading. Defensive `if outcome.insights:` / `if outcome.recommendations:` guards before indexing — protects against future success-contract drift.
+
+### Profile fetched at route layer, not orchestrator (Phase 5C)
+Routes call `firestore.get_user(uid)` themselves; orchestrator's `profile: UserProfile` param is strict (not Optional). If profile is None at the route, raise `HTTPException(500, "Server error")` with structlog ERROR `event="route.profile_missing"`. This is server-state corruption (every authenticated user has a profile created by `/auth/verify` in 5A) — graceful-empty would mask the bug.
+
+### SSE inter-event sleep in route, not orchestrator (Phase 5C)
+`SSE_INTER_EVENT_DELAY_S = 0.08` lives in `app/routes/insights.py`. Tests monkeypatch to 0. Orchestrator is pure logic with no sleep — keeps it framework-agnostic and lets the JSON path skip the delay entirely.
+
+### Non-transactional accept_recommendation is correct (Phase 5C)
+`accept_recommendation(uid, rec_id)` uses read-then-update, NOT a transaction. Recs are path-scoped under `users/{uid}/recommendations/`, so cross-user writes are structurally impossible. Same-user double-accept is idempotent at the data level (`accepted=True` regardless of write count). Transaction would be theatre.
+
 ---
 
 ## Critical gotchas (DO NOT re-discover)
 
 ### Coverage threshold is 95% (NOT 80%)
-Default plan said 80%. User raised to 95% early. Every phase must keep the threshold. Current actual ~99.7%.
+Default plan said 80%. User raised to 95% early. Every phase must keep the threshold. Current actual ~99.66% after Phase 5C.
 
 ### mypy + third-party libs without stubs
 `secure`, `slowapi`, `structlog`, `google.cloud.firestore`, `firebase_admin`, `google.generativeai` ship without stubs. `[[tool.mypy.overrides]]` blocks with `ignore_missing_imports = true` (and `implicit_reexport = true` for firebase_admin to access `firebase_admin.auth`). Any new dep without stubs needs the same treatment.
@@ -321,6 +382,15 @@ Stage 0.3 grep `grep -rnE '/api/(activities|dashboard)/[^{"]' tests/` matches th
 ### UserProfile.Optional[] ripple
 `email`, `state`, `home_profile` are nullable. Any new code reading these must handle None. Before adding new agent code or routes that touch UserProfile, grep `grep -rn "profile\.\(state\|email\|home_profile\)" app/` to find existing consumers and verify their None-handling matches.
 
+### `curl -sI` defaults to HEAD — false 405s on stream/POST routes (Phase 5C)
+`curl -sI` sends `HEAD` by default. Routes that return a non-standard `Response` (e.g. `StreamingResponse` for `/api/insights/stream`, or routes typed for content negotiation) may not auto-support HEAD via Starlette's usual GET→HEAD inference, returning **405 Method Not Allowed** instead of the expected 401. This makes validation runs look broken when they aren't — and the `content-length: 31` of Starlette's auto-generated 405 body is also a different shape than the uniform 401 contract's 34 bytes, which is a separate false alarm. **Always use explicit `-X GET` / `-X POST` in gauntlet curl commands**, not bare `-sI` against GET-only or POST-only routes. Phase 5C stages 4.3, 5.1–5.8, 6.1–6.4 all needed this fix.
+
+### grep against multi-line route decorators silently misses (Phase 5C)
+`black` wraps long `@router.get(...)` / `@router.post(...)` decorators onto multiple lines when args (path + `response_model=` + `summary=`) exceed line-length 100. A regex like `grep -nE '@router\.(get|post)\("' app/routes/foo.py` matches only single-line decorators and silently returns no output for multi-line ones. The slashless invariant check (stages 2.2, 2.3, 7.1) needs either a multi-line-aware pattern (`grep -rnE '@router\.(get|post|put|delete|patch)\(\s*"/"\s*,?\s*$' app/routes/`) or direct file inspection. **Don't trust an empty grep result against route files; verify by file dump.**
+
+### Double `Server:` header is pre-existing, deferred to Phase 7 (discovered Phase 5C)
+Every response carries TWO `Server:` headers: `server: uvicorn` AND a blank `server: ` (the `secure` library appends a blank one to obscure server software; uvicorn's own header isn't stripped). Present since Phase 1B; confirmed by curl on `/api/health`. Not 5C-introduced. **Phase 7 fix:** either configure `uvicorn.run(server_header=False)` (or set in Cloud Run startup config), OR have the security headers middleware overwrite rather than append. Out of scope for 5C.
+
 ---
 
 ## Operational conventions
@@ -347,8 +417,8 @@ User has GitHub Copilot with Claude models. Switch per phase to control cost.
 | 4B Analyst + Coach + integration | **Opus 4.8** | done |
 | 5A Auth dep + auth/users routes | Sonnet 4.6 | done |
 | 5B Activity routes + dashboard | Sonnet 4.6 | done |
-| **5C Insights + recs + SSE** | **Opus 4.8** | NEXT |
-| 6 Frontend | Sonnet 4.6 | |
+| **5C Insights + recs + SSE** | **Opus 4.8** | done |
+| **6 Frontend** | **Sonnet 4.6** | **NEXT** |
 | 7 Security hardening | Sonnet 4.6 | |
 | 8 Test sweep | Sonnet 4.6 | |
 | 9 Deploy + perf | Sonnet 4.6 | |
@@ -426,68 +496,37 @@ Phase 5B introduced a 12-stage validation block. **Use the same shape for 5C and
 
 ## Pending phases
 
-### Phase 5C — Insights + recommendations routes + SSE reasoning stream (NEXT, Opus 4.8)
+### Phase 6 — Frontend (HTMX + Tailwind, Sonnet 4.6, NEXT)
 
-**Goal:** Wire AnalystAgent and CoachAgent behind FastAPI routes; add the SSE reasoning-stream endpoint that powers the "visible AI thinking" rubric differentiator.
-
-**Files to create:**
-- `app/agents/factories.py` — extend with `get_analyst_agent()` and `get_coach_agent()` cached factories.
-- `app/routes/insights.py`:
-  - `GET /api/insights` — triggers Analyst if cached insights are stale; "stale" = no insight generated in last 6 hours OR new activities since last gen. Reuses `service.get_recent_insights` and `service.add_insight`.
-  - `GET /api/insights/stream` — SSE endpoint; `text/event-stream` content type; generator yields `data: {json}\n\n` chunks. For v1: emit `agent_reasoning.reasoning_steps` in chunks AFTER agent completes (Gemini SDK doesn't stream function calls natively). Document this constraint honestly in README. The chunks include heartbeats and a terminal `event: done` marker.
-- `app/routes/recommendations.py`:
-  - `GET /api/recommendations` — triggers CoachAgent, returns list of Recommendation
-  - `POST /api/recommendations/{rec_id}/accept` — flips `accepted=True` via `service.accept_recommendation`
-- `app/main.py` updates — register new routers (slashless convention)
-- Tests for every route with mocked agents, mocked auth, mocked Firestore
-
-**Design notes:**
-- Pattern-match on `AnalystOutcome.status` / `CoachOutcome.status` for HTTP:
-  - success → 200 with list
-  - empty → 200 with empty list + reason string
-  - failed → 500 with generic message; log actual reason server-side
-- SSE generator pattern:
-  ```python
-  async def reasoning_stream(...):
-      yield f"event: start\ndata: {{\"phase\":\"analyst\"}}\n\n"
-      outcome = await analyst.generate_insights(...)
-      for step in outcome.agent_reasoning.reasoning_steps:
-          yield f"event: reasoning\ndata: {json.dumps({'agent': 'analyst', 'step': step})}\n\n"
-      yield f"event: start\ndata: {{\"phase\":\"coach\"}}\n\n"
-      coach_outcome = await coach.generate_recommendations(...)
-      for step in coach_outcome.agent_reasoning.reasoning_steps:
-          yield f"event: reasoning\ndata: {json.dumps({'agent': 'coach', 'step': step})}\n\n"
-      yield f"event: done\ndata: {json.dumps({'insights': ..., 'recommendations': ...})}\n\n"
-  ```
-- Return `StreamingResponse(reasoning_stream(...), media_type="text/event-stream")` with `Cache-Control: no-cache`, `Connection: keep-alive`, `X-Accel-Buffering: no` (disables nginx/proxy buffering)
-- Rate limit: per-user 30/min on insights generation, 60/min on stream. Phase 7 implementation; for 5C just use existing app-wide limiter.
-
-**Pre-flight before Phase 5C:**
-```bash
-# Confirm Gemini SDK still importable
-python3 -c "from google import generativeai; print(generativeai.__version__)"
-
-# Confirm Cloud Run env var has gemini-api-key (this won't hit Gemini, just confirms secret is wired)
-gcloud run services describe carbonsaathi --region asia-south1 --format='value(spec.template.spec.containers[0].env)' | grep -i gemini
-```
-
-### Phase 6 — Frontend (HTMX + Tailwind, Sonnet 4.6)
-
-Server-rendered HTMX pages with Tailwind via CDN. Pages: sign-in (Firebase Google Sign-In), onboarding, dashboard (today's footprint + week chart + streak), log activity (textarea POSTing to `/api/activities`, response renders parsed Activity + agent_reasoning), insights feed (cards with reasoning expandable, optional SSE live render), recommendations (cards with Accept button).
+Server-rendered HTMX pages with Tailwind via CDN. Pages: sign-in (Firebase Google Sign-In), onboarding, dashboard (today's footprint + week chart + streak), log activity (textarea POSTing to `/api/activities`, response renders parsed Activity + agent_reasoning), insights feed (cards with reasoning expandable + live render via SSE), recommendations (cards with Accept button).
 
 Semantic HTML, ARIA labels, keyboard navigation, WCAG AA contrast, `prefers-reduced-motion` respected. Slashless paths in all `hx-post` / `hx-get` attributes. Tighten `ALLOWED_ORIGINS` from `*` to deployed URL.
 
+**SSE consumption note (DECISIONS.md §15 #15):** Phase 6 MUST use `fetch()` + ReadableStream reader for SSE consumption, NOT `EventSource`. EventSource cannot send custom `Authorization` headers, and the uniform 401 contract requires `Authorization: Bearer …` on `/api/insights/stream`. The fetch+stream pattern is more code but is the only path that works with header auth.
+
+**Content negotiation reminder:** `/api/insights/stream` returns SSE for `Accept: text/event-stream` (or no Accept, or `*/*`, or both Accept types) and single JSON for `Accept: application/json` only. Phase 6's `fetch()` call should set `Accept: text/event-stream` explicitly to lock in the streaming path.
+
+**Phase 6 entry-point checklist:**
+- Firebase Auth web SDK config must exist in the Firebase console (currently an open question — see below).
+- OAuth client redirect URI: add the Cloud Run URL to authorized redirects.
+- `ALLOWED_ORIGINS` tightening: replace `*` with the actual Cloud Run URL.
+
 ### Phase 7 — Security hardening (Sonnet 4.6)
 
-CSP / HSTS / X-Frame-Options / X-Content-Type-Options / Referrer-Policy / Permissions-Policy verified on every response status. Per-user rate limiting via Firebase uid keying on slowapi. Prompt injection tests against real route handlers. OWASP Top 10 manually walked with documented mitigations. Confirm `redirect_slashes=False` still in place.
+CSP / HSTS / X-Frame-Options / X-Content-Type-Options / Referrer-Policy / Permissions-Policy verified on every response status. Per-user rate limiting via Firebase uid keying on slowapi (per-user 30/min on insight generation, 60/min on stream). Prompt injection tests against real route handlers. OWASP Top 10 manually walked with documented mitigations. Confirm `redirect_slashes=False` still in place.
+
+**Phase 7 carry-ins (logged from 5C):**
+- Fix the double `Server:` header (uvicorn + blank from `secure` middleware) — see Critical gotchas.
+- Complete unfinished 5C validation gauntlet stages 6 (auth consistency loop), 7.3 (no `EventSource`), 7.10 (orchestrator ERROR logging) if not already verified by then.
+- Verify `pip-audit` status for `pydantic-settings` 2.14.1 (installed) vs 2.14.2 (pinned in pyproject) — currently unverified; was 5C's only `pip-audit` finding and is pre-existing (not 5C-introduced). Likely just `pip install -e ".[dev]" --upgrade` realigns the venv.
 
 ### Phase 8 — Test sweep (Sonnet 4.6)
 
-Push coverage to 99%+ on Phase 5C-7 deltas. Fix any flakes. Add golden-set regression tests for Analyst and Coach via 4B fixtures. Integration tests for full route → agent → Firestore chain (Firestore mocked).
+Push coverage to 99%+ on Phase 6–7 deltas. Fix any flakes. Add golden-set regression tests for Analyst and Coach via 4B fixtures. Integration tests for full route → agent → Firestore chain (Firestore mocked).
 
 ### Phase 9 — Deploy + perf check (Sonnet 4.6)
 
-Re-deploy. Load test 50 concurrent. Verify p95 < 2s. Verify `min-instances=1` still set. Verify no 500s under load. Verify SSE endpoint streams correctly through Cloud Run's HTTP/2 load balancer (this is the most uncertain piece — has caused issues for others).
+Re-deploy. Load test 50 concurrent. Verify p95 < 2s. Verify `min-instances=1` still set. Verify no 500s under load. **Verify SSE endpoint streams correctly through Cloud Run's HTTP/2 load balancer** (the most uncertain piece — Cloud Run HTTP/2 buffering can break SSE in subtle ways; flag if any odd behavior shows up).
 
 ### Phase 10 — README + manual eval polish (Opus 4.8)
 
@@ -497,7 +536,7 @@ Manual evaluators read the README. Sections needed:
 - Agent flow diagram (Mermaid)
 - 3–5 ADR-style decisions with alternatives considered
 - Screenshots
-- Honest limitations (single-language UI, no historical import, India-only, food factor methodology rough, SSE chunks emit post-completion not mid-flight)
+- Honest limitations (single-language UI, no historical import, India-only, food factor methodology rough, **SSE chunks emit post-completion not mid-flight**, **`fetch()` + ReadableStream consumer required for SSE auth**)
 - Run / deploy instructions
 - License + credits
 
@@ -513,13 +552,16 @@ Only if Submission #1 reveals a clear, fixable gap on a specific criterion AND a
 
 ## Open questions for the next session
 
-1. **Current time / schedule recovery.** Phase 5B was the last completed phase. Re-plan remaining phases (5C–11) against the Sun 18:00 IST submission target.
-2. **GitHub push status.** As of end of 5B, push was deferred ("push everything once dev and docs are done"). This is bad practice — SPOF risk and CI deferred. Confirm at session start whether push has happened; if not, recommend pushing through 5B at the next phase boundary at minimum.
-3. **Firebase Auth client setup.** Phase 1D enabled the firebase API. The actual Firebase Authentication client config (web SDK config for Google Sign-In) needs to be created in the Firebase console before Phase 6 frontend can sign users in. Confirm whether this is done.
-4. **Gemini quota / billing.** Phases 4, 5A, 5B all mocked Gemini. Phase 5C routes will hit real Gemini in dev/prod. Confirm `gemini-api-key` secret has live key with quota.
-5. **OAuth client redirect URI.** Firebase Google Sign-In needs the Cloud Run URL added as an authorized redirect. Do this when UI ships in Phase 6.
-6. **README owner placeholder.** CI badge in README.md has `<owner>` placeholder unless already sed-substituted. Confirm.
-7. **SSE behind Cloud Run load balancer.** Cloud Run HTTP/2 buffering can break SSE in subtle ways. Phase 9 will validate; flag if any odd behavior shows up earlier.
+1. **Current time / schedule recovery.** Phase 5C completed Saturday mid-afternoon IST. Re-plan remaining phases (6–11) against the Sun 18:00 IST submission target. Phase 6 (frontend) is the longest remaining phase; budget accordingly.
+2. **GitHub push status.** As of end of 5C, push was still deferred. SPOF risk has compounded across 11 phases now. **Strong recommendation:** push at the start of the next session, before Phase 6 work begins. CI on the cumulative repo is overdue.
+3. **Phase 5C unfinished validation gauntlet stages.** Stage 6 (auth consistency loop: 4 routes × 4 bad-header variants), stage 7.3 (`grep EventSource`), stage 7.10 (`grep ERROR logging in orchestrator`), and stage 11 (commit + push + CI) were NOT run. None block Phase 6 start, but should be cleared before submission.
+4. **`pip-audit` finding: `pydantic-settings` 2.14.1 vs 2.14.2 pin.** Not 5C-introduced; pre-existing venv-vs-pin drift. Likely cleared by `pip install -e ".[dev]" --upgrade`. Verify before Phase 9 deploy.
+5. **Empty-list defensive guard test coverage.** The orchestrator has `if outcome.insights:` / `if outcome.recommendations:` defensive guards before first-item indexing. These are structurally unreachable on a well-behaved `AnalystSuccess`/`CoachSuccess` (which by spec carry ≥1 item). Whether the orchestrator's 100% coverage actually exercises these branches (via synthetic empty-list success constructors) vs. tooling counting them as covered some other way is unverified.
+6. **Firebase Auth client setup.** Phase 1D enabled the firebase API. The actual Firebase Authentication client config (web SDK config for Google Sign-In) needs to be created in the Firebase console **before** Phase 6 frontend can sign users in. Confirm at session start.
+7. **Gemini quota / billing.** Phases 4, 5A, 5B, 5C all mocked Gemini. Phase 6 frontend hitting `/api/insights/stream` will hit real Gemini in dev. Confirm `gemini-api-key` secret has live key with quota.
+8. **OAuth client redirect URI.** Firebase Google Sign-In needs the Cloud Run URL added as an authorized redirect. Do this when UI ships in Phase 6.
+9. **README owner placeholder.** CI badge in README.md has `<owner>` placeholder unless already sed-substituted. Confirm.
+10. **SSE behind Cloud Run load balancer.** Cloud Run HTTP/2 buffering can break SSE in subtle ways. Phase 9 will validate; flag if any odd behavior shows up earlier in Phase 6 once a real client is consuming the stream.
 
 ---
 
@@ -531,28 +573,36 @@ When opening a new Claude conversation, paste in this order:
 Continuing CarbonSaathi PromptWars Challenge 3 build.
 
 Attached:
-1. DECISIONS.md — locked project spec + §14 conventions + §15 amendments log (read first)
-2. PROGRESS.md — build state through Phase 5B (read second)
+1. DECISIONS.md — locked project spec + §14 conventions + §15 amendments log
+   (includes Phase 5C amendments #11–#16; read first)
+2. PROGRESS.md — build state through Phase 5C (read second)
 
-Status: Phases 1A through 5B all green. Auth foundation, activity routes, dashboard
-with IST timezone and streak grace, slashless route convention, redirect_slashes=False,
-uniform 401 auth-failure contract — all in place. ~99.7% coverage, suite ~1.0s.
+Status: Phases 1A through 5C all green. Auth foundation, activity routes, dashboard
+with IST timezone and streak grace, insights + recommendations routes, SSE reasoning
+stream with content negotiation, slashless route convention, redirect_slashes=False,
+uniform 401 auth-failure contract — all in place. 415 tests / 99.66% coverage / ~1.58s
+suite.
 
-Ready for Phase 5C (insights + recommendations routes + SSE reasoning stream).
+Ready for Phase 6 (HTMX + Tailwind frontend, Sonnet 4.6).
 
 User preferences are in system context — push back first, no glazing, lead with the
 most useful thing.
 
 Continue using the established phase prompt template documented in PROGRESS.md
-§ "Phase prompt template" and the 12-stage validation gauntlet established in 5B.
+§ "Phase prompt template" and the 12-stage validation gauntlet established in 5B
+§ "Comprehensive validation gauntlet". For curl commands in stages 4–6, use explicit
+-X GET / -X POST flags — bare `curl -sI` causes false 405s on stream/POST routes
+(see Critical gotchas).
 
 First actions:
-1. Confirm you've read both files
-2. Ask the current IST time so we can re-plan Phases 5C–11 against the Sun 18:00 IST
-   submission deadline
-3. Ask whether the GitHub push has happened yet (as of end of 5B it had not)
-4. Then generate the Phase 5C prompt (Opus 4.8 — SSE design + dual-agent orchestration
-   is more reasoning-heavy than 5A/5B) following the template
+1. Confirm you've read both files (and call out anything in DECISIONS.md §14, §15,
+   or the Phase 5C section of PROGRESS.md that's load-bearing for Phase 6 frontend
+   work — especially §15 #15 about fetch+ReadableStream for SSE consumption)
+2. Flag any of the Open questions in PROGRESS.md that are now actionable (GitHub
+   push status, Firebase Auth web SDK config, Gemini quota for live calls, the
+   unfinished 5C gauntlet stages 6/7.3/7.10/11)
+3. Then generate the Phase 6 prompt (Sonnet 4.6 — HTMX + Tailwind, server-rendered,
+   no build step) following the established phase prompt template
 ```
 
 End of progress log.
