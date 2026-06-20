@@ -9,6 +9,7 @@ import structlog
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -17,7 +18,16 @@ from starlette.responses import Response
 from app.core.config import get_settings
 from app.core.logging import configure_logging
 from app.core.security import configure_security_middleware
-from app.routes import activities, auth, dashboard, health, insights, recommendations, users
+from app.routes import (
+    activities,
+    auth,
+    dashboard,
+    health,
+    insights,
+    pages,
+    recommendations,
+    users,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -98,6 +108,15 @@ def create_app() -> FastAPI:
     app.include_router(dashboard.router, prefix="/api")
     app.include_router(insights.router, prefix="/api")
     app.include_router(recommendations.router, prefix="/api")
+    app.include_router(pages.router)
+
+    # Mount /static AFTER all /api routers so the static handler cannot
+    # shadow API paths.  Resolved relative to this module so the lookup
+    # works regardless of CWD.
+    from pathlib import Path
+
+    static_dir = Path(__file__).resolve().parent / "static"
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
     return app
 

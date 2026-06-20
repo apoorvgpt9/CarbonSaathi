@@ -13,6 +13,7 @@ def test_settings_loads_from_env() -> None:
     assert settings.firebase_project_id == "test-project"
     assert settings.firebase_api_key == "test-fb-api-key"
     assert settings.firebase_auth_domain == "test.firebaseapp.com"
+    assert settings.firebase_app_id == "1:test:web:test"
     assert settings.app_env == "development"
     assert settings.log_level == "INFO"
 
@@ -79,6 +80,7 @@ def test_unknown_field_forbidden() -> None:
             firebase_project_id="p",
             firebase_api_key="a",
             firebase_auth_domain="d",
+            firebase_app_id="e",
             definitely_not_a_field="x",
         )
 

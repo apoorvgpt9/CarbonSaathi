@@ -1,0 +1,50 @@
+{# Recommendation card — canonical server-side markup.
+
+   Inputs: `rec` (app.models.recommendation.Recommendation).  Mirrored by the
+   client-side renderer in /static/js/recommendations_page.js.  The Accept
+   button is wired via JS (`data-action="accept-rec"`) because the existing
+   `/api/recommendations/{id}/accept` endpoint returns JSON, not HTML; an
+   hx-post swap would render raw JSON in the DOM. #}
+<li
+  class="rec-card rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+  data-rec-id="{{ rec.id }}"
+>
+  <div class="flex items-baseline justify-between">
+    <h3 class="text-sm font-semibold text-slate-900">{{ rec.title }}</h3>
+    <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+      {{ rec.type }} · {{ rec.difficulty }}
+    </span>
+  </div>
+  <p class="mt-2 text-sm text-slate-700">{{ rec.description }}</p>
+  <p class="mt-2 text-xs text-slate-500">
+    Expected saving: <span class="font-medium text-slate-700">{{ "%.2f"|format(rec.expected_saving_kg) }} kg CO₂e</span>
+  </p>
+  {% if rec.agent_reasoning %}
+    <details class="mt-3 text-xs text-slate-600">
+      <summary class="cursor-pointer font-medium text-slate-700">
+        Coach reasoning ({{ rec.agent_reasoning.reasoning_steps|length }} steps)
+      </summary>
+      <ol class="mt-2 list-decimal space-y-1 pl-5">
+        {% for step in rec.agent_reasoning.reasoning_steps %}
+          <li class="reasoning-step">{{ step }}</li>
+        {% endfor %}
+      </ol>
+    </details>
+  {% endif %}
+  <div class="mt-3">
+    {% if rec.accepted %}
+      <span class="inline-flex items-center text-sm font-medium text-emerald-700">
+        ✓ Accepted
+      </span>
+    {% else %}
+      <button
+        type="button"
+        data-action="accept-rec"
+        data-rec-id="{{ rec.id }}"
+        class="rounded-md border border-emerald-600 px-3 py-1 text-sm font-medium text-emerald-700 hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+      >
+        Accept
+      </button>
+    {% endif %}
+  </div>
+</li>

@@ -28,6 +28,7 @@ def _test_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     monkeypatch.setenv("FIREBASE_PROJECT_ID", "test-project")
     monkeypatch.setenv("FIREBASE_API_KEY", "test-fb-api-key")
     monkeypatch.setenv("FIREBASE_AUTH_DOMAIN", "test.firebaseapp.com")
+    monkeypatch.setenv("FIREBASE_APP_ID", "1:test:web:test")
     monkeypatch.setenv("APP_ENV", "development")
     get_settings.cache_clear()
     yield

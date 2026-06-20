@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Insights · CarbonSaathi{% endblock %}
+{% block content %}
+  <section>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h1 class="text-2xl font-semibold text-slate-900">Insights & reasoning</h1>
+      <div class="flex gap-2">
+        <button
+          type="button"
+          data-action="stream-insights"
+          class="inline-flex items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+        >
+          Generate insights
+        </button>
+        <button
+          type="button"
+          data-action="stop-stream"
+          disabled
+          class="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Stop
+        </button>
+      </div>
+    </div>
+
+    <p class="mt-2 text-sm text-slate-600">
+      Watch the Analyst and Coach think through your last 14 days. Cached results
+      return immediately; a stale cache triggers a fresh generation.
+    </p>
+
+    <section
+      id="reasoning-stream"
+      aria-live="polite"
+      aria-label="Live agent reasoning"
+      class="mt-6 space-y-4"
+    ></section>
+
+    <p
+      id="stream-error"
+      role="alert"
+      class="mt-4 hidden rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+    ></p>
+
+    <h2 class="mt-10 text-lg font-semibold text-slate-900">Latest insights</h2>
+    <ul id="insights-list" class="mt-3 space-y-3"></ul>
+
+    <h2 class="mt-10 text-lg font-semibold text-slate-900">Recommendations</h2>
+    <ul id="recommendations-list" class="mt-3 space-y-3"></ul>
+  </section>
+  <script type="module" defer src="/static/js/insights_page.js"></script>
+{% endblock %}

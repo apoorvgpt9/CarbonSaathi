@@ -1,0 +1,43 @@
+/* CarbonSaathi overrides for Tailwind defaults.
+ * Tailwind CDN handles the bulk; this file is for focus polish and
+ * accessibility opt-outs that can't be expressed with utility classes
+ * alone.
+ */
+
+/* Ensure focus rings are visible on all interactive elements, not just
+ * the Tailwind-styled ones. */
+:focus-visible {
+  outline: 2px solid #059669; /* emerald-600 */
+  outline-offset: 2px;
+}
+
+/* Respect user's motion preferences for the live reasoning stream and
+ * fade-in transitions. */
+@media (prefers-reduced-motion: reduce) {
+  .reasoning-step,
+  .fade-in {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Soft fade for new reasoning steps when motion is allowed. */
+@media (prefers-reduced-motion: no-preference) {
+  .reasoning-step {
+    animation: csaathi-fade-in 180ms ease-out;
+  }
+  .fade-in {
+    animation: csaathi-fade-in 180ms ease-out;
+  }
+}
+
+@keyframes csaathi-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

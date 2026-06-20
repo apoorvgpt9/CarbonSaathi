@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Onboarding · CarbonSaathi{% endblock %}
+{% block content %}
+  <section class="mx-auto max-w-xl">
+    <h1 class="text-2xl font-semibold text-slate-900">Tell us about your home</h1>
+    <p class="mt-2 text-sm text-slate-600">
+      One-time setup so we can size your electricity and food estimates.
+    </p>
+
+    <form
+      id="onboarding-form"
+      class="mt-6 space-y-5 rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
+    >
+      <div>
+        <label for="onb-state" class="block text-sm font-medium text-slate-700">
+          State / Union Territory
+        </label>
+        <select
+          id="onb-state"
+          name="state"
+          required
+          class="mt-1 block w-full rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        >
+          <option value="" disabled selected>Choose your state…</option>
+          {% for s in states %}
+            <option value="{{ s }}">{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label for="onb-bhk" class="block text-sm font-medium text-slate-700">
+          Bedrooms (BHK)
+        </label>
+        <input
+          id="onb-bhk"
+          name="bhk"
+          type="number"
+          min="1"
+          max="5"
+          value="2"
+          required
+          class="mt-1 block w-full rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        />
+      </div>
+
+      <div class="flex items-center gap-2">
+        <input
+          id="onb-has-ac"
+          name="has_ac"
+          type="checkbox"
+          class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+        />
+        <label for="onb-has-ac" class="text-sm text-slate-700">Home has an air conditioner</label>
+      </div>
+
+      <div>
+        <label for="onb-fridge" class="block text-sm font-medium text-slate-700">
+          Refrigerator BEE star rating
+        </label>
+        <select
+          id="onb-fridge"
+          name="fridge_class"
+          required
+          class="mt-1 block w-full rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        >
+          <option value="5-star">5-star</option>
+          <option value="4-star">4-star</option>
+          <option value="3-star" selected>3-star</option>
+          <option value="2-star">2-star</option>
+          <option value="1-star">1-star</option>
+          <option value="unknown">Not sure</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="onb-dietary" class="block text-sm font-medium text-slate-700">
+          Primary dietary category
+        </label>
+        <select
+          id="onb-dietary"
+          name="dietary"
+          required
+          class="mt-1 block w-full rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        >
+          <option value="veg" selected>Vegetarian</option>
+          <option value="eggetarian">Eggetarian</option>
+          <option value="non-veg">Non-vegetarian</option>
+        </select>
+      </div>
+
+      <button
+        type="submit"
+        class="inline-flex items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+      >
+        Save and continue
+      </button>
+      <p id="onboarding-result" role="status" class="text-sm"></p>
+    </form>
+  </section>
+  <script type="module" defer src="/static/js/onboarding_page.js"></script>
+{% endblock %}

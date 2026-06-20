@@ -1,10 +1,14 @@
 """Authentication routes for CarbonSaathi.
 
-Exposes ``POST /api/auth/verify``, which verifies the caller's Firebase ID token
-(via the :func:`~app.core.auth.verify_firebase_token` dependency) and ensures a
-:class:`~app.models.user.UserProfile` exists for them.  First-time callers get a
-minimal, not-yet-onboarded profile; returning callers have their ``last_active``
-timestamp refreshed in the background.
+Exposes:
+    * ``POST /api/auth/verify`` — verifies the caller's Firebase ID token (via
+      the :func:`~app.core.auth.verify_firebase_token` dependency) and ensures a
+      :class:`~app.models.user.UserProfile` exists for them.  First-time callers
+      get a minimal, not-yet-onboarded profile; returning callers have their
+      ``last_active`` timestamp refreshed in the background.
+    * ``GET  /api/auth/config`` — returns the public Firebase web-app config so
+      the browser can ``initializeApp({...})``.  Public, no authentication
+      required (the values are designed-public per the Firebase docs).
 """
 
 from __future__ import annotations
@@ -16,6 +20,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, ConfigDict
 
 from app.core.auth import CurrentUser, verify_firebase_token
+from app.core.config import Settings, get_settings
 from app.models.user import UserProfile
 from app.services.firestore_service import (
     FirestoreService,
@@ -24,6 +29,24 @@ from app.services.firestore_service import (
 )
 
 router = APIRouter(tags=["auth"])
+
+
+class FirebaseConfig(BaseModel):
+    """Public Firebase web-app config returned by ``GET /api/auth/config``.
+
+    Attributes:
+        apiKey: Firebase web API key (public by design; ships to the browser).
+        authDomain: Firebase auth domain (``<project>.firebaseapp.com``).
+        projectId: GCP/Firebase project ID.
+        appId: Firebase web-app ID.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    apiKey: str  # noqa: N815 - Firebase web-SDK key name; preserved verbatim
+    authDomain: str  # noqa: N815
+    projectId: str  # noqa: N815
+    appId: str  # noqa: N815
 
 
 class VerifyResponse(BaseModel):
@@ -96,3 +119,26 @@ async def verify(
     updated = existing.model_copy(update={"last_active": now})
     fire_and_forget(service.upsert_user(updated))
     return VerifyResponse(user=updated, is_new=False)
+
+
+@router.get("/auth/config", response_model=FirebaseConfig, summary="Firebase web-app config")
+async def auth_config(
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> FirebaseConfig:
+    """Return the public Firebase web-app config for browser initialization.
+
+    The four values are designed-public (Firebase docs state the web API key
+    is not a secret).  No authentication is required.
+
+    Args:
+        settings: Application settings, injected by dependency.
+
+    Returns:
+        A :class:`FirebaseConfig` consumed by the JS in ``auth.js``.
+    """
+    return FirebaseConfig(
+        apiKey=settings.firebase_api_key,
+        authDomain=settings.firebase_auth_domain,
+        projectId=settings.firebase_project_id,
+        appId=settings.firebase_app_id,
+    )

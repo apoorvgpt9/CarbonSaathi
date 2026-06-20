@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Sign in · CarbonSaathi{% endblock %}
+{% block content %}
+  <section class="mx-auto max-w-md py-16 text-center">
+    <h1 class="text-3xl font-semibold text-slate-900">CarbonSaathi</h1>
+    <p class="mt-3 text-base text-slate-600">
+      Your carbon companion, not your carbon scolder.
+    </p>
+    <p class="mt-2 text-sm text-slate-500">
+      Track everyday emissions, see the reasoning, get one nudge at a time.
+    </p>
+    <button
+      type="button"
+      data-action="sign-in"
+      class="mt-8 inline-flex items-center gap-3 rounded-md bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+    >
+      Sign in with Google
+    </button>
+    <p id="sign-in-error" role="alert" class="mt-4 hidden text-sm text-red-600"></p>
+  </section>
+{% endblock %}

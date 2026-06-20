@@ -1,0 +1,57 @@
+{# CarbonSaathi base layout — all pages extend this template.
+
+   Loads:
+     * Tailwind CSS via CDN (runtime-injects <style> tags — requires
+       'unsafe-inline' on style-src in the CSP).
+     * HTMX via CDN (deferred).
+     * Custom CSS overrides (focus rings, prefers-reduced-motion).
+     * auth.js as an ES module (bootstraps Firebase web SDK).
+     * htmx_bearer.js as a classic deferred script (must register
+       htmx:configRequest handler before HTMX fires its first request).
+
+   No importmap, no inline <script> content.  All JS lives in
+   /static/js/*.js per the Phase 6 spec. #}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}CarbonSaathi{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+    <link rel="stylesheet" href="/static/css/app.css" />
+    <script type="module" src="/static/js/auth.js"></script>
+    <script defer src="/static/js/htmx_bearer.js"></script>
+  </head>
+  <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-white focus:px-3 focus:py-2 focus:shadow"
+      >Skip to main content</a
+    >
+    <nav
+      aria-label="Primary"
+      class="border-b border-slate-200 bg-white"
+    >
+      <div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+        <a href="/" class="text-lg font-semibold text-emerald-700">CarbonSaathi</a>
+        <div class="flex items-center gap-4 text-sm">
+          <a href="/dashboard" class="text-slate-600 hover:text-slate-900">Dashboard</a>
+          <a href="/log" class="text-slate-600 hover:text-slate-900">Log</a>
+          <a href="/insights" class="text-slate-600 hover:text-slate-900">Insights</a>
+          <a href="/recommendations" class="text-slate-600 hover:text-slate-900">Tips</a>
+          <button
+            type="button"
+            data-action="sign-out"
+            class="rounded border border-slate-300 px-3 py-1 text-slate-700 hover:bg-slate-100"
+          >
+            Sign out
+          </button>
+        </div>
+      </div>
+    </nav>
+    <main id="main" class="mx-auto max-w-5xl px-4 py-8">
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>

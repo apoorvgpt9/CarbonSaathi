@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Recommendations · CarbonSaathi{% endblock %}
+{% block content %}
+  <section>
+    <h1 class="text-2xl font-semibold text-slate-900">Your recommendations</h1>
+    <p class="mt-2 text-sm text-slate-600">
+      Tap "Accept" to mark a tip as one you'll try. Generate new tips from the
+      <a class="text-emerald-700 hover:underline" href="/insights">Insights</a> page.
+    </p>
+
+    <ul
+      id="recommendations-list"
+      aria-live="polite"
+      class="mt-6 space-y-3"
+    ></ul>
+
+    <p
+      id="recs-empty"
+      class="mt-4 hidden text-sm text-slate-500"
+    >
+      No recommendations yet. Generate some from the Insights page.
+    </p>
+  </section>
+  <script type="module" defer src="/static/js/recommendations_page.js"></script>
+{% endblock %}

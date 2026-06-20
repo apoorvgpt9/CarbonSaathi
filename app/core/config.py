@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     firebase_project_id: str
     firebase_api_key: str
     firebase_auth_domain: str
+    firebase_app_id: str
     google_application_credentials: str = "./serviceAccountKey.json"
     rate_limit_per_minute: int = Field(default=30, ge=1, le=1000)
 
