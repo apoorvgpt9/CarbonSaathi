@@ -43,4 +43,6 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD python -c "import os, urllib.request; urllib.request.urlopen(f\"http://127.0.0.1:{os.environ['PORT']}/api/health\")" || exit 1
 
 # Exec form so SIGTERM is delivered to uvicorn directly (clean Cloud Run shutdown).
-CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
+# --no-server-header suppresses uvicorn's "Server: uvicorn" so the `secure`
+# middleware's blank Server value is the only one on the wire.
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --no-server-header"]

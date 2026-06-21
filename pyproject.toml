@@ -105,6 +105,7 @@ pythonpath = ["."]
 markers = [
     "integration: marks tests as integration tests",
     "slow: marks tests as slow",
+    "firestore_emulator: marks tests that require the local Firestore emulator (run via 'make test-emulator')",
 ]
 
 [tool.coverage.run]

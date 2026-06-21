@@ -2,7 +2,8 @@
 // /api/activities, and renders the resulting card (or error) into
 // #activity-result.  Card markup mirrors app/templates/partials/activity_card.html.
 
-import { getIdToken, getReadyUser } from "./auth.js";
+import { authedFetch } from "./api_client.js";
+import { getReadyUser } from "./auth.js";
 
 const form = document.getElementById("log-form");
 const result = document.getElementById("activity-result");
@@ -78,31 +79,19 @@ if (form && result) {
       result.innerHTML = renderError("Please enter an activity.", "text-sm text-red-600");
       return;
     }
-    let token;
-    try {
-      token = await getIdToken();
-    } catch (_err) {
-      window.location.assign("/");
-      return;
-    }
     let resp;
     try {
-      resp = await fetch("/api/activities", {
+      resp = await authedFetch("/api/activities", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          Authorization: "Bearer " + token,
         },
         body: JSON.stringify({ raw_input: raw }),
       });
     } catch (err) {
       console.error("log network error", err);
       result.innerHTML = renderError("Network error. Please try again.", "text-sm text-red-600");
-      return;
-    }
-    if (resp.status === 401) {
-      window.location.assign("/");
       return;
     }
     if (resp.status === 201) {

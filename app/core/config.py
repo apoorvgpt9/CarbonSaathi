@@ -33,7 +33,10 @@ class Settings(BaseSettings):
 
     app_env: str = "development"
     log_level: str = "INFO"
-    allowed_origins: Annotated[list[str], NoDecode] = ["http://localhost:8000"]
+    allowed_origins: Annotated[list[str], NoDecode] = [
+        "http://localhost:8080",
+        "https://carbonsaathi-ahkpdce5pa-el.a.run.app",
+    ]
     gemini_api_key: SecretStr
     gemini_model_flash: str = "gemini-2.5-flash"
     gemini_model_pro: str = "gemini-2.5-pro"

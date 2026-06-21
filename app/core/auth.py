@@ -12,7 +12,7 @@ from __future__ import annotations
 from typing import Annotated, Any
 
 import structlog
-from fastapi import Header, HTTPException, status
+from fastapi import Header, HTTPException, Request, status
 from firebase_admin import auth as firebase_auth
 from pydantic import BaseModel, ConfigDict
 
@@ -56,11 +56,19 @@ def _unauthorized() -> HTTPException:
 
 
 async def verify_firebase_token(
+    request: Request,
     authorization: Annotated[str | None, Header(alias="Authorization")] = None,
 ) -> CurrentUser:
     """Verify the bearer Firebase ID token and return the current user.
 
+    On success the resolved :class:`CurrentUser` is also attached to
+    ``request.state.user`` so the rate-limit key function
+    (:func:`app.core.ratelimit.key_uid_or_ip`) can read the uid when slowapi's
+    per-route ``@limiter.limit(...)`` decorator runs inside the route.
+
     Args:
+        request: The incoming request — :class:`Request` is auto-injected by
+            FastAPI's dependency machinery.
         authorization: Raw ``Authorization`` request header. Expected to be of
             the form ``"Bearer <id_token>"`` (the scheme is matched
             case-insensitively).
@@ -106,9 +114,11 @@ async def verify_firebase_token(
         _logger.error("auth.unexpected_error")
         raise _unauthorized() from None
 
-    return CurrentUser(
+    user = CurrentUser(
         uid=decoded["uid"],
         email=decoded.get("email"),
         email_verified=decoded.get("email_verified", False),
         name=decoded.get("name"),
     )
+    request.state.user = user
+    return user

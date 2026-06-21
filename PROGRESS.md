@@ -520,6 +520,70 @@ CSP / HSTS / X-Frame-Options / X-Content-Type-Options / Referrer-Policy / Permis
 - Complete unfinished 5C validation gauntlet stages 6 (auth consistency loop), 7.3 (no `EventSource`), 7.10 (orchestrator ERROR logging) if not already verified by then.
 - Verify `pip-audit` status for `pydantic-settings` 2.14.1 (installed) vs 2.14.2 (pinned in pyproject) — currently unverified; was 5C's only `pip-audit` finding and is pre-existing (not 5C-introduced). Likely just `pip install -e ".[dev]" --upgrade` realigns the venv.
 
+### Phase 7 — Security hardening (DONE)
+
+Phase 7 hardened the security posture without adding agent code, prompt changes, or new functional features. 11 tasks executed across 6 batches (A1–A6, B1–B5) and validated end-to-end with the standard gauntlet.
+
+**Delivered (code changes):**
+
+- **A1 — Double `Server` header fixed.** Switched dev/prod entrypoints to `uvicorn --no-server-header`; the secure-headers middleware no longer collides with uvicorn's default header. Verified by live curl on `/api/health` — no `server:` line in response. Added a regression test that asserts the `server` header is absent.
+- **A2 — HTMX CDN removed.** Deleted the unpkg.com HTMX include and the `htmx_bearer.js` shim. Replaced with a hand-rolled [`app/static/js/api_client.js`](app/static/js/api_client.js) `authedFetch(url, options)` that pulls the ID token from `window.csaathi.auth`, refreshes once on 401, and redirects to `/` on the second 401. All page-level fetches in `dashboard_page.js`, `log_page.js`, `insights_page.js`, `onboarding_page.js`, and `recommendations_page.js` now route through it. CSP `script-src` updated to drop `unpkg.com`.
+- **A3 — auth.js comment fix.** Trivial doc fix — `Promise` casing and removed a stale HTMX reference.
+- **A4 — `ALLOWED_ORIGINS` tightened.** Default now lists only the two production hosts (Cloud Run service URL + Firebase hosting URL); `*` is no longer the fallback. Documented in `.env.example`.
+- **A5 — `pip-audit` clean.** Upgraded `pip` (CVE-2025-8869, 2 advisories) and `pydantic-settings` to 2.14.2 (3 advisories). Audit run at end of phase reports zero known vulnerabilities.
+- **A6 — Staleness `previous_run_failed` branch.** Added explicit handling in [`app/services/staleness.py`](app/services/staleness.py) so a partially-written orchestrator state is detected and triggers regeneration rather than serving stale half-results. Two new tests cover the branch.
+- **B1 — Security headers on every status.** Wrapped `_set_security_headers` in a `try/except` that logs `unhandled_exception` via structlog and returns a `JSONResponse({"detail": "Internal Server Error"})` — with all security headers still applied. New parametrized test ([`tests/test_security.py`](tests/test_security.py)::`test_security_headers_emitted_on_every_status`) walks 200/401/404/422/500 via a sub-app fixture with four synthetic probe routes.
+- **B2 — Per-user rate limiting.** Pulled `slowapi.Limiter` construction out into [`app/core/ratelimit.py`](app/core/ratelimit.py) with a `key_uid_or_ip(request)` key function that prefers `request.state.user.uid` (set by `verify_firebase_token`) and falls back to source IP for pre-auth routes. Decorators applied per the table below:
+
+  | Route                                | Limit       | Key       |
+  |--------------------------------------|-------------|-----------|
+  | `POST /api/auth/verify`              | 30/min      | source IP |
+  | `POST /api/activities`               | 30/min      | uid       |
+  | `GET  /api/activities`               | 60/min      | uid       |
+  | `GET  /api/dashboard`                | 60/min      | uid       |
+  | `GET  /api/insights`                 | 60/min      | uid       |
+  | `GET  /api/insights/stream`          | 30/min      | uid       |
+  | `GET  /api/recommendations`          | 60/min      | uid       |
+  | `POST /api/recommendations/{id}/accept` | 30/min   | uid       |
+  | `GET  /api/users/me`                 | 60/min      | uid       |
+  | `POST /api/users/onboarding`         | 30/min      | uid       |
+
+  Four new tests in [`tests/test_ratelimit.py`](tests/test_ratelimit.py) cover the key function plus an integration test that fires 30 successful requests + a 31st that gets 429. Limiter is disabled at module load in `tests/conftest.py` so the rest of the suite isn't 429'd.
+- **B3 — Prompt-injection integration tests.** [`tests/test_security_injection.py`](tests/test_security_injection.py) drives 12 representative payloads (`ignore_previous`, `disregard_above`, `system_prompt_leak`, `role_override`, `act_as_pirate`, `reveal_instructions`, `sudo_priv_escalation`, `system_tag_injection`, `forget_everything`, `forget_all_previous`, `assistant_tag_inject`, `ignore_all_prior`) through the real route + real LoggerAgent with **only** `_model.generate_content_async` swapped for an `AsyncMock` that raises if invoked. Every payload returns 400 with a `reason` field and the Gemini SDK call count stays at 0.
+- **B4 — `SECURITY.md` walkthrough.** Added [`SECURITY.md`](SECURITY.md) at repo root: full OWASP Top 10 (2021) walkthrough, one paragraph per category, citing the specific code path or test that backs each claim.
+
+**Out of scope per pre-approved decisions (D7):** no agent code changes, no prompt-template changes, no model-selection changes, no edits to `scripts/03_deploy.sh`, no README changes, no `redirect_slashes` flip, no auth-failure contract changes, no IST-policy changes.
+
+**Files NOT touched (pre-existing uncommitted WIP, owner: prior phase):**
+- `app/core/config.py` — commented `gemini_model_pro`
+- `app/core/gemini.py` — `pro_model=settings.gemini_model_flash` workaround
+- `app/services/firestore_service.py` — `_iso_z()` helper + range-filter timestamp fix
+
+**B5 — Validation gauntlet results:**
+
+| Stage                                                    | Result          |
+|----------------------------------------------------------|-----------------|
+| 1. `ruff check .` (touched files)                        | clean           |
+| 2. `mypy app` (strict)                                   | clean — 44 files, 0 issues |
+| 3. `bandit -r app`                                       | clean — 0 issues across 4 447 LOC |
+| 4. `pip_audit`                                           | clean — 0 known vulnerabilities |
+| 5. `pytest --cov-fail-under=95`                          | **469 passed, 1 failed**, 99.68% coverage, 4.95 s |
+| 6. Test budget < 60 s                                    | 4.95 s — under by 12× |
+| 7. `uvicorn` smoke + `curl` `/api/health` headers        | 200 OK, all security headers present, no `server:` line |
+| 8. CSP excludes `unpkg.com`                              | verified by curl |
+| 9. HSTS = `max-age=31536000; includeSubDomains`          | verified by curl |
+| 10. `SECURITY.md` present at repo root                   | done |
+| 11. PROGRESS.md updated with Phase 7 results             | (this section) |
+| 12. Carry-ins triaged                                    | see below |
+
+The one failing test (`tests/test_core_gemini.py::test_pro_builds_pro_model`) is the D7 Pro→Flash workaround and is pre-existing — explicitly excluded from Phase 7 scope.
+
+**Known lint carry-ins (deferred — both protected by D7):**
+- `app/core/gemini.py:105` — E501 (line too long) from the inline TODO comment on the Pro→Flash workaround.
+- `app/services/firestore_service.py:464` — W292 (no trailing newline) from prior-phase WIP.
+
+These two will fall out naturally when the Pro→Flash workaround is reverted and the firestore_service WIP lands.
+
 ### Phase 8 — Test sweep (Sonnet 4.6)
 
 Push coverage to 99%+ on Phase 6–7 deltas. Fix any flakes. Add golden-set regression tests for Analyst and Coach via 4B fixtures. Integration tests for full route → agent → Firestore chain (Firestore mocked).

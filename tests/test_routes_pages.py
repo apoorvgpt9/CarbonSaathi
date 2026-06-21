@@ -47,11 +47,10 @@ async def test_page_returns_html(client: httpx.AsyncClient, path: str, marker: s
     ["/", "/onboarding", "/dashboard", "/log", "/insights", "/recommendations"],
 )
 async def test_page_loads_required_cdns_and_app_js(client: httpx.AsyncClient, path: str) -> None:
-    """Every page references Tailwind CDN, HTMX CDN, and /static/js/auth.js."""
+    """Every page references Tailwind CDN and /static/js/auth.js."""
     resp = await client.get(path)
     body = resp.text
     assert "cdn.tailwindcss.com" in body
-    assert "unpkg.com/htmx.org" in body
     assert "/static/js/auth.js" in body
 
 

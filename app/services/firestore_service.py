@@ -13,6 +13,15 @@ Collection layout (from DECISIONS.md § 8)::
 
 Pydantic → Firestore: ``model.model_dump(mode="json")``
 Firestore → Pydantic: ``Model.model_validate(doc.to_dict())``
+
+Timestamp comparisons: ``model_dump(mode="json")`` serializes ``datetime``
+fields to ISO-8601 strings with a ``Z`` suffix (not ``+00:00``), so any
+Firestore range filter (``>=``, ``<``) against a stored ``timestamp`` field
+MUST compare against a string in that same ``Z``-suffixed format — Firestore
+range filters are lexicographic string comparisons when the stored field is
+a string, and a native Python ``datetime`` query bound silently matches
+zero documents against a string-typed field. Always go through :func:`_iso_z`
+when building a range-filter bound for a timestamp field.
 """
 
 from __future__ import annotations
@@ -34,6 +43,30 @@ from app.models.recommendation import Recommendation
 from app.models.user import UserProfile
 
 _logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Timestamp formatting helper
+# ---------------------------------------------------------------------------
+
+
+def _iso_z(dt: datetime) -> str:
+    """Format a UTC datetime to match the stored timestamp string format.
+
+    ``model_dump(mode="json")`` (Pydantic v2) serializes timezone-aware UTC
+    datetimes with a ``Z`` suffix, not ``+00:00``. Firestore range filters
+    against a string-typed field are lexicographic, so a query bound built
+    via plain ``dt.isoformat()`` (which produces ``+00:00``) does not reliably
+    align with stored ``Z``-suffixed values at the same instant. Use this
+    helper for every range-filter bound built against a ``timestamp`` field.
+
+    Args:
+        dt: A timezone-aware UTC ``datetime``.
+
+    Returns:
+        An ISO-8601 string with a ``Z`` suffix, matching stored format.
+    """
+    return dt.isoformat().replace("+00:00", "Z")
 
 
 # ---------------------------------------------------------------------------
@@ -170,7 +203,7 @@ class FirestoreService:
         col_ref = self._client.collection("users").document(user_id).collection("activities")
         query = col_ref.order_by("timestamp", direction="DESCENDING").limit(limit)
         if before is not None:
-            query = query.where(filter=FieldFilter("timestamp", "<", before))
+            query = query.where(filter=FieldFilter("timestamp", "<", _iso_z(before)))
         activities: list[Activity] = []
         async for doc in query.stream():
             data: dict[str, Any] = doc.to_dict() or {}
@@ -338,7 +371,8 @@ class FirestoreService:
         """Return activities whose timestamp falls in [start, end).
 
         Ordered by timestamp descending.  Used primarily by the dashboard to
-        aggregate emissions over a rolling 7-day IST window.
+        aggregate emissions over a rolling 7-day IST window, and by the
+        insight-generation orchestrator to fetch the lookback window.
 
         Args:
             uid: Firebase UID of the target user.
@@ -353,8 +387,8 @@ class FirestoreService:
         col_ref = self._client.collection("users").document(uid).collection("activities")
         query = (
             col_ref.order_by("timestamp", direction="DESCENDING")
-            .where(filter=FieldFilter("timestamp", ">=", start))
-            .where(filter=FieldFilter("timestamp", "<", end))
+            .where(filter=FieldFilter("timestamp", ">=", _iso_z(start)))
+            .where(filter=FieldFilter("timestamp", "<", _iso_z(end)))
             .limit(limit)
         )
         activities: list[Activity] = []

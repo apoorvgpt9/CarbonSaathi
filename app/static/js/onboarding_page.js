@@ -2,11 +2,12 @@
 // shape that POST /api/users/onboarding expects, and on success routes to
 // /dashboard.
 //
-// We can't use plain HTMX hx-post here because the endpoint requires a
-// nested `{state, home_profile: {bhk, has_ac, fridge_class, dietary}}`
-// body, which form-encoding can't express without a wrapper.
+// The endpoint requires a nested
+// `{state, home_profile: {bhk, has_ac, fridge_class, dietary}}` body, so we
+// hand-build the JSON here instead of relying on form-encoded submission.
 
-import { getIdToken, getReadyUser } from "./auth.js";
+import { authedFetch } from "./api_client.js";
+import { getReadyUser } from "./auth.js";
 
 const form = document.getElementById("onboarding-form");
 const result = document.getElementById("onboarding-result");
@@ -36,22 +37,13 @@ if (form) {
       },
     };
 
-    let token;
-    try {
-      token = await getIdToken();
-    } catch (_err) {
-      window.location.assign("/");
-      return;
-    }
-
     let resp;
     try {
-      resp = await fetch("/api/users/onboarding", {
+      resp = await authedFetch("/api/users/onboarding", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          Authorization: "Bearer " + token,
         },
         body: JSON.stringify(payload),
       });
@@ -64,10 +56,6 @@ if (form) {
       return;
     }
 
-    if (resp.status === 401) {
-      window.location.assign("/");
-      return;
-    }
     if (!resp.ok) {
       let detail = "Save failed (" + resp.status + ")";
       try {

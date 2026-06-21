@@ -7,8 +7,8 @@
 //   * Track the current user, expose getIdToken(forceRefresh).
 //   * Wire [data-action="sign-in"] and [data-action="sign-out"] buttons
 //     anywhere in the DOM.
-//   * On a fresh sign-in, POST /api/auth/verify and route to
-//     /onboarding or /dashboard based on is_new.
+//   * On a fresh sign-in, POST /api/auth/verify and redirect to
+//     /onboarding if new OR onboarding incomplete; /dashboard otherwise.
 //   * Dispatch a `csaathi:auth-change` CustomEvent on document each time
 //     onAuthStateChanged fires.
 //

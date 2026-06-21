@@ -59,13 +59,16 @@ async def is_pipeline_stale(
 
     1. No :class:`~app.models.generation_state.GenerationState` exists
        (``"no_prior_run"``).
-    2. The last run completed on a different IST calendar day
+    2. The previous run failed — either ``analyst_status`` or ``coach_status``
+       is ``"failed"`` (``"previous_run_failed"``).  A failed run produces no
+       usable cache; the next request retries unconditionally.
+    3. The last run completed on a different IST calendar day
        (``"ist_day_change"``).
-    3. An activity has been logged since the last run completed
+    4. An activity has been logged since the last run completed
        (``"new_activity_since_last_run"``).
-    4. The Analyst was empty and the empty-result TTL has expired
+    5. The Analyst was empty and the empty-result TTL has expired
        (``"analyst_empty_ttl_expired"``).
-    5. The Coach was empty and the empty-result TTL has expired
+    6. The Coach was empty and the empty-result TTL has expired
        (``"coach_empty_ttl_expired"``).
 
     Otherwise the cached result may be served (``"fresh"``).
@@ -82,6 +85,9 @@ async def is_pipeline_stale(
     state = await firestore.get_generation_state(uid)
     if state is None:
         return StalenessResult(stale=True, reason="no_prior_run", cached_state=None)
+
+    if state.analyst_status == "failed" or state.coach_status == "failed":
+        return StalenessResult(stale=True, reason="previous_run_failed", cached_state=state)
 
     today_ist = now_utc.astimezone(IST).date()
     cached_ist = state.last_completed_at.astimezone(IST).date()

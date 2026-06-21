@@ -3,14 +3,15 @@ APP := app.main:app
 IMAGE := carbonsaathi:local
 PORT := 8080
 
-.PHONY: help install run test test-one lint format typecheck security all clean docker-build docker-run gcp-setup gcp-secrets deploy
+.PHONY: help install run test test-one test-emulator lint format typecheck security all clean docker-build docker-run gcp-setup gcp-secrets deploy
 
 help:
 	@echo "Available targets:"
-	@echo "  install       Install the package with dev extras and pre-commit hooks"
-	@echo "  run           Run the uvicorn dev server on :$(PORT)"
-	@echo "  test          Run the full test suite with coverage (must reach 95%)"
-	@echo "  test-one      Run a single file without coverage threshold: make test-one F=tests/test_health.py"
+	@echo "  install        Install the package with dev extras and pre-commit hooks"
+	@echo "  run            Run the uvicorn dev server on :$(PORT)"
+	@echo "  test           Run the full test suite with coverage (must reach 95%)"
+	@echo "  test-one       Run a single file without coverage threshold: make test-one F=tests/test_health.py"
+	@echo "  test-emulator  Start the Firestore emulator, run emulator-marked tests, then stop it"
 	@echo "  lint          Run ruff checks"
 	@echo "  format        Auto-format with black"
 	@echo "  typecheck     Run mypy --strict"
@@ -28,13 +29,23 @@ install:
 	pre-commit install
 
 run:
-	$(PYTHON) -m uvicorn $(APP) --reload --host 0.0.0.0 --port $(PORT)
+	$(PYTHON) -m uvicorn $(APP) --reload --host 0.0.0.0 --port $(PORT) --no-server-header
 
 test:
 	$(PYTHON) -m pytest --cov=app --cov-branch --cov-report=term-missing --cov-report=html --cov-fail-under=95
 
 test-one:
 	$(PYTHON) -m pytest $(F) --no-cov -v
+
+test-emulator:
+	@echo "Starting Firestore emulator on localhost:8090 ..."
+	gcloud emulators firestore start --host-port=localhost:8090 &
+	EMULATOR_PID=$$!; \
+	sleep 3; \
+	FIRESTORE_EMULATOR_HOST=localhost:8090 $(PYTHON) -m pytest -m firestore_emulator --no-cov -v; \
+	RESULT=$$?; \
+	kill $$EMULATOR_PID 2>/dev/null || true; \
+	exit $$RESULT
 
 lint:
 	$(PYTHON) -m ruff check .

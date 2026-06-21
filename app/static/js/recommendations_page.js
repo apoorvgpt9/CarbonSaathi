@@ -3,7 +3,8 @@
 // (POST) and swap the button for the Accepted badge.  Card markup mirrors
 // app/templates/partials/recommendation_card.html.
 
-import { getIdToken, getReadyUser } from "./auth.js";
+import { authedFetch } from "./api_client.js";
+import { getReadyUser } from "./auth.js";
 
 const list = document.getElementById("recommendations-list");
 const empty = document.getElementById("recs-empty");
@@ -56,20 +57,9 @@ async function load() {
     window.location.assign("/");
     return;
   }
-  let token;
-  try {
-    token = await getIdToken();
-  } catch (_err) {
-    window.location.assign("/");
-    return;
-  }
-  const resp = await fetch("/api/recommendations", {
-    headers: { Accept: "application/json", Authorization: "Bearer " + token },
+  const resp = await authedFetch("/api/recommendations", {
+    headers: { Accept: "application/json" },
   });
-  if (resp.status === 401) {
-    window.location.assign("/");
-    return;
-  }
   if (!resp.ok) {
     console.error("recommendations fetch failed", resp.status);
     return;
@@ -94,10 +84,9 @@ if (list) {
     if (!recId) return;
     btn.disabled = true;
     try {
-      const token = await getIdToken();
-      const resp = await fetch(`/api/recommendations/${encodeURIComponent(recId)}/accept`, {
+      const resp = await authedFetch(`/api/recommendations/${encodeURIComponent(recId)}/accept`, {
         method: "POST",
-        headers: { Authorization: "Bearer " + token, Accept: "application/json" },
+        headers: { Accept: "application/json" },
       });
       if (resp.ok) {
         const slot = btn.parentElement;

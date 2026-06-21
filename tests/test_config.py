@@ -26,8 +26,11 @@ def test_allowed_origins_parsed_from_csv(monkeypatch: pytest.MonkeyPatch) -> Non
 
 
 def test_allowed_origins_default() -> None:
-    settings = get_settings()
-    assert settings.allowed_origins == ["http://localhost:8000"]
+    settings = Settings(_env_file=None)
+    assert settings.allowed_origins == [
+        "http://localhost:8080",
+        "https://carbonsaathi-ahkpdce5pa-el.a.run.app",
+    ]
 
 
 def test_allowed_origins_accepts_list() -> None:

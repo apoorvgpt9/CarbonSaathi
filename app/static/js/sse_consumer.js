@@ -1,8 +1,7 @@
 // CarbonSaathi SSE consumer for /api/insights/stream.
 //
-// Hand-rolled because EventSource cannot send Authorization headers and
-// the htmx-ext-sse extension uses EventSource internally — both are
-// forbidden per the Phase 6 spec.
+// Hand-rolled because EventSource cannot send Authorization headers, which
+// the streaming endpoint requires.
 //
 // Frame format (from app/services/orchestrator.py):
 //

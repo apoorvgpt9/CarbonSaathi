@@ -10,13 +10,13 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
 from starlette.responses import Response
 
 from app.core.config import get_settings
 from app.core.logging import configure_logging
+from app.core.ratelimit import limiter
 from app.core.security import configure_security_middleware
 from app.routes import (
     activities,
@@ -85,12 +85,9 @@ def create_app() -> FastAPI:
         redirect_slashes=False,
     )
 
-    limiter = Limiter(
-        key_func=get_remote_address,
-        default_limits=[f"{settings.rate_limit_per_minute}/minute"],
-    )
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, _rate_limit_handler)
+    app.add_middleware(SlowAPIMiddleware)
 
     app.add_middleware(
         CORSMiddleware,

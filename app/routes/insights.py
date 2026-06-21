@@ -28,6 +28,7 @@ from app.agents.analyst_agent import AnalystAgent
 from app.agents.coach_agent import CoachAgent
 from app.agents.factories import get_analyst_agent, get_coach_agent
 from app.core.auth import CurrentUser, verify_firebase_token
+from app.core.ratelimit import limiter
 from app.models.insight import Insight
 from app.models.user import UserProfile
 from app.services.firestore_service import FirestoreService, get_firestore_service
@@ -55,13 +56,16 @@ class InsightListResponse(BaseModel):
 
 
 @router.get("", response_model=InsightListResponse, summary="List latest insights")
+@limiter.limit("60/minute")
 async def list_insights(
+    request: Request,
     current: Annotated[CurrentUser, Depends(verify_firebase_token)],
     service: Annotated[FirestoreService, Depends(get_firestore_service)],
 ) -> InsightListResponse:
     """Return the user's most recently persisted insights (no generation).
 
     Args:
+        request: Incoming request (used by the rate limiter).
         current: The authenticated Firebase user.
         service: The Firestore persistence layer.
 
@@ -74,6 +78,7 @@ async def list_insights(
 
 
 @router.get("/stream", summary="Generate insights and recommendations")
+@limiter.limit("30/minute")
 async def stream_insights(
     request: Request,
     current: Annotated[CurrentUser, Depends(verify_firebase_token)],

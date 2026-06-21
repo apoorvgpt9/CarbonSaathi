@@ -4,7 +4,8 @@
 // All values shown to the user are formatted by the server already;
 // this module renders the strings as-given.
 
-import { getIdToken, getReadyUser } from "./auth.js";
+import { authedFetch } from "./api_client.js";
+import { getReadyUser } from "./auth.js";
 
 const TODAY_KG = "today-kg";
 const TODAY_TRANSPORT = "today-transport-kg";
@@ -64,20 +65,9 @@ async function load() {
     window.location.assign("/");
     return;
   }
-  let token;
-  try {
-    token = await getIdToken();
-  } catch (_err) {
-    window.location.assign("/");
-    return;
-  }
-  const resp = await fetch("/api/dashboard", {
-    headers: { Accept: "application/json", Authorization: "Bearer " + token },
+  const resp = await authedFetch("/api/dashboard", {
+    headers: { Accept: "application/json" },
   });
-  if (resp.status === 401) {
-    window.location.assign("/");
-    return;
-  }
   if (!resp.ok) {
     console.error("dashboard fetch failed", resp.status);
     return;

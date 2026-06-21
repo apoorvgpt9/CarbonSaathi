@@ -3,9 +3,9 @@
 Registers an HTTP middleware that applies a strict, hand-crafted set of
 security response headers to every response.  Unlike
 :meth:`secure.Secure.with_default_headers`, the CSP here is tailored to the
-Phase 6 frontend: it whitelists the three CDNs we load (Tailwind, HTMX,
-Firebase via gstatic), allows the Firebase Identity Toolkit / token endpoints
-in ``connect-src``, and permits the Firebase auth-handler popup in
+Phase 6 frontend: it whitelists the CDNs we load (Tailwind + Firebase via
+gstatic / apis.google.com), allows the Firebase Identity Toolkit / token
+endpoints in ``connect-src``, and permits the Firebase auth-handler popup in
 ``frame-src``.
 
 Critical invariants:
@@ -22,10 +22,14 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 
 import secure
+import structlog
 from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from starlette.responses import Response
 
 from app.core.config import get_settings
+
+_logger = structlog.get_logger(__name__)
 
 
 def _build_csp() -> secure.ContentSecurityPolicy:
@@ -44,8 +48,8 @@ def _build_csp() -> secure.ContentSecurityPolicy:
         .script_src(
             "'self'",
             "https://cdn.tailwindcss.com",
-            "https://unpkg.com",
             "https://www.gstatic.com",
+            "https://apis.google.com",
         )
         .style_src("'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com")
         .img_src("'self'", "data:", "https:")
@@ -56,7 +60,7 @@ def _build_csp() -> secure.ContentSecurityPolicy:
             "https://securetoken.googleapis.com",
             "https://identitytoolkit.googleapis.com",
         )
-        .frame_src(f"https://{auth_domain}")
+        .frame_src(f"https://{auth_domain}", "https://apis.google.com")
         .base_uri("'self'")
         .form_action("'self'")
         .frame_ancestors("'none'")
@@ -85,6 +89,13 @@ def _build_secure_headers() -> secure.Secure:
 def configure_security_middleware(app: FastAPI) -> None:
     """Register the security-headers middleware on ``app``.
 
+    The middleware unconditionally applies the configured ``secure`` headers
+    to the response that goes back on the wire — including 4xx responses
+    synthesised by Starlette (404 / 422) and 500 responses synthesised here
+    when a downstream handler raises an unhandled exception.  HTTPException
+    paths (401 / 403 / 404 raised by routes) flow through ``call_next`` as
+    normal Response objects, so they pick up headers naturally.
+
     Args:
         app: The FastAPI application to attach the middleware to.
 
@@ -98,6 +109,23 @@ def configure_security_middleware(app: FastAPI) -> None:
         request: Request,
         call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
-        response = await call_next(request)
+        try:
+            response = await call_next(request)
+        except Exception as exc:
+            # Catch here (inside ServerErrorMiddleware) so we can attach the
+            # security headers to the synthesised 500 response.  Without this
+            # catch, the exception would bubble to Starlette's
+            # ServerErrorMiddleware (which sits outside us) and the resulting
+            # 500 response would skip our header set.
+            _logger.exception(
+                "unhandled_exception",
+                path=request.url.path,
+                method=request.method,
+                error=str(exc),
+            )
+            response = JSONResponse(
+                {"detail": "Internal Server Error"},
+                status_code=500,
+            )
         secure_headers.set_headers(response)
         return response

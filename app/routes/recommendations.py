@@ -14,10 +14,11 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from app.core.auth import CurrentUser, verify_firebase_token
+from app.core.ratelimit import limiter
 from app.models.recommendation import Recommendation
 from app.services.firestore_service import FirestoreService, get_firestore_service
 
@@ -54,13 +55,16 @@ class AcceptResponse(BaseModel):
     response_model=RecommendationListResponse,
     summary="List latest recommendations",
 )
+@limiter.limit("60/minute")
 async def list_recommendations(
+    request: Request,
     current: Annotated[CurrentUser, Depends(verify_firebase_token)],
     service: Annotated[FirestoreService, Depends(get_firestore_service)],
 ) -> RecommendationListResponse:
     """Return the user's most recently persisted recommendations (no generation).
 
     Args:
+        request: Incoming request (used by the rate limiter).
         current: The authenticated Firebase user.
         service: The Firestore persistence layer.
 
@@ -77,7 +81,9 @@ async def list_recommendations(
     response_model=AcceptResponse,
     summary="Accept a recommendation",
 )
+@limiter.limit("30/minute")
 async def accept_recommendation(
+    request: Request,
     rec_id: str,
     current: Annotated[CurrentUser, Depends(verify_firebase_token)],
     service: Annotated[FirestoreService, Depends(get_firestore_service)],
@@ -89,6 +95,7 @@ async def accept_recommendation(
     caller's UID, so ownership is never leaked.
 
     Args:
+        request: Incoming request (used by the rate limiter).
         rec_id: Firestore document ID of the recommendation.
         current: The authenticated Firebase user.
         service: The Firestore persistence layer.

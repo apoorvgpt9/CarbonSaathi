@@ -3,11 +3,12 @@
    Loads:
      * Tailwind CSS via CDN (runtime-injects <style> tags — requires
        'unsafe-inline' on style-src in the CSP).
-     * HTMX via CDN (deferred).
      * Custom CSS overrides (focus rings, prefers-reduced-motion).
      * auth.js as an ES module (bootstraps Firebase web SDK).
-     * htmx_bearer.js as a classic deferred script (must register
-       htmx:configRequest handler before HTMX fires its first request).
+
+   Per-page modules (dashboard_page.js, log_page.js, …) are loaded by each
+   page template via `<script type="module">` and import the shared
+   `api_client.js` (Bearer attach + 401 refresh-and-retry) themselves.
 
    No importmap, no inline <script> content.  All JS lives in
    /static/js/*.js per the Phase 6 spec. #}
@@ -18,10 +19,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% block title %}CarbonSaathi{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
     <link rel="stylesheet" href="/static/css/app.css" />
     <script type="module" src="/static/js/auth.js"></script>
-    <script defer src="/static/js/htmx_bearer.js"></script>
   </head>
   <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
     <a

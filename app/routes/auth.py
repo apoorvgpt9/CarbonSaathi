@@ -16,11 +16,13 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, ConfigDict
+from slowapi.util import get_remote_address
 
 from app.core.auth import CurrentUser, verify_firebase_token
 from app.core.config import Settings, get_settings
+from app.core.ratelimit import limiter
 from app.models.user import UserProfile
 from app.services.firestore_service import (
     FirestoreService,
@@ -82,7 +84,9 @@ def _display_name(current: CurrentUser) -> str:
 
 
 @router.post("/auth/verify")
+@limiter.limit("30/minute", key_func=get_remote_address)
 async def verify(
+    request: Request,
     current: Annotated[CurrentUser, Depends(verify_firebase_token)],
     service: Annotated[FirestoreService, Depends(get_firestore_service)],
 ) -> VerifyResponse:
@@ -94,6 +98,7 @@ async def verify(
     response is not blocked.
 
     Args:
+        request: Incoming request (used by the rate limiter).
         current: The authenticated caller, injected by the auth dependency.
         service: The Firestore service, injected by dependency.
 

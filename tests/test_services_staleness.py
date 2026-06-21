@@ -138,3 +138,35 @@ async def test_success_same_day_no_new_activity_is_fresh(
 
     assert result.stale is False
     assert result.reason == "fresh"
+
+
+async def test_previous_run_analyst_failed_is_stale(firestore_service_mock: AsyncMock) -> None:
+    """A previously-failed Analyst run must re-trigger on the next request."""
+    state = _state(
+        last_completed_at=datetime(2026, 6, 20, 11, 55, tzinfo=UTC),
+        analyst_status="failed",
+        coach_status="skipped",
+    )
+    firestore_service_mock.get_generation_state.return_value = state
+
+    result = await is_pipeline_stale(uid=_UID, firestore=firestore_service_mock, now_utc=_NOW)
+
+    assert result.stale is True
+    assert result.reason == "previous_run_failed"
+    assert result.cached_state == state
+
+
+async def test_previous_run_coach_failed_is_stale(firestore_service_mock: AsyncMock) -> None:
+    """A previously-failed Coach run must re-trigger on the next request."""
+    state = _state(
+        last_completed_at=datetime(2026, 6, 20, 11, 55, tzinfo=UTC),
+        analyst_status="success",
+        coach_status="failed",
+    )
+    firestore_service_mock.get_generation_state.return_value = state
+
+    result = await is_pipeline_stale(uid=_UID, firestore=firestore_service_mock, now_utc=_NOW)
+
+    assert result.stale is True
+    assert result.reason == "previous_run_failed"
+    assert result.cached_state == state

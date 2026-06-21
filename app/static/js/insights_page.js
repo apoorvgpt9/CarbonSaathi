@@ -5,6 +5,7 @@
 // partial templates.
 
 import { streamInsights } from "./sse_consumer.js";
+import { authedFetch } from "./api_client.js";
 import { getReadyUser } from "./auth.js";
 
 const generateBtn = document.querySelector('[data-action="stream-insights"]');
@@ -209,10 +210,9 @@ if (recsList) {
     if (!recId) return;
     btn.disabled = true;
     try {
-      const token = await window.csaathi.auth.getIdToken();
-      const resp = await fetch(`/api/recommendations/${encodeURIComponent(recId)}/accept`, {
+      const resp = await authedFetch(`/api/recommendations/${encodeURIComponent(recId)}/accept`, {
         method: "POST",
-        headers: { Authorization: "Bearer " + token, Accept: "application/json" },
+        headers: { Accept: "application/json" },
       });
       if (resp.ok) {
         const card = btn.closest(".rec-card");

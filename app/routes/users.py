@@ -13,10 +13,11 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict
 
 from app.core.auth import CurrentUser, verify_firebase_token
+from app.core.ratelimit import limiter
 from app.models.user import HomeProfile, IndianState, UserProfile
 from app.services.firestore_service import FirestoreService, get_firestore_service
 
@@ -41,13 +42,16 @@ class OnboardingPayload(BaseModel):
 
 
 @router.get("/me")
+@limiter.limit("60/minute")
 async def get_me(
+    request: Request,
     current: Annotated[CurrentUser, Depends(verify_firebase_token)],
     service: Annotated[FirestoreService, Depends(get_firestore_service)],
 ) -> UserProfile:
     """Return the authenticated user's profile.
 
     Args:
+        request: Incoming request (used by the rate limiter).
         current: The authenticated caller, injected by the auth dependency.
         service: The Firestore service, injected by dependency.
 
@@ -64,7 +68,9 @@ async def get_me(
 
 
 @router.post("/onboarding")
+@limiter.limit("30/minute")
 async def onboarding(
+    request: Request,
     payload: OnboardingPayload,
     current: Annotated[CurrentUser, Depends(verify_firebase_token)],
     service: Annotated[FirestoreService, Depends(get_firestore_service)],
@@ -75,6 +81,7 @@ async def onboarding(
     Re-onboarding an already-onboarded user is allowed and treated as an update.
 
     Args:
+        request: Incoming request (used by the rate limiter).
         payload: The onboarding fields (state and home profile).
         current: The authenticated caller, injected by the auth dependency.
         service: The Firestore service, injected by dependency.

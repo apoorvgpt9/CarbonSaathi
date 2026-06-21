@@ -19,10 +19,11 @@ from datetime import UTC, date, datetime, timedelta
 from typing import Annotated
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 
 from app.core.auth import CurrentUser, verify_firebase_token
+from app.core.ratelimit import limiter
 from app.models.activity import Activity
 from app.services.firestore_service import FirestoreService, get_firestore_service
 
@@ -129,7 +130,9 @@ def _compute_streak(activities: list[Activity], today_ist: date) -> int:
     response_model=DashboardResponse,
     summary="Get activity dashboard",
 )
+@limiter.limit("60/minute")
 async def get_dashboard(
+    request: Request,
     current: Annotated[CurrentUser, Depends(verify_firebase_token)],
     service: Annotated[FirestoreService, Depends(get_firestore_service)],
 ) -> DashboardResponse:
@@ -142,6 +145,7 @@ async def get_dashboard(
     querying Firestore.
 
     Args:
+        request: Incoming request (used by the rate limiter).
         current: The authenticated Firebase user.
         service: The Firestore persistence layer.
 

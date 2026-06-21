@@ -18,13 +18,14 @@ from datetime import UTC, datetime
 from typing import Annotated
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, StringConstraints
 
 from app.agents.factories import get_logger_agent
 from app.agents.logger_agent import LoggerAgent
 from app.core.auth import CurrentUser, verify_firebase_token
+from app.core.ratelimit import limiter
 from app.models.activity import Activity
 from app.models.shared import AgentReasoning
 from app.models.user import IndianState
@@ -84,7 +85,9 @@ class ActivityListResponse(BaseModel):
     status_code=201,
     summary="Log a new carbon activity",
 )
+@limiter.limit("30/minute")
 async def log_activity(
+    request: Request,
     req: LogActivityRequest,
     current: Annotated[CurrentUser, Depends(verify_firebase_token)],
     service: Annotated[FirestoreService, Depends(get_firestore_service)],
@@ -97,6 +100,7 @@ async def log_activity(
     :class:`~app.services.firestore_service.FirestoreService`.
 
     Args:
+        request: Incoming request (used by the rate limiter).
         req: The parsed request body.
         current: The authenticated Firebase user.
         service: The Firestore persistence layer.
@@ -160,7 +164,9 @@ async def log_activity(
     response_model=ActivityListResponse,
     summary="List recent activities",
 )
+@limiter.limit("60/minute")
 async def list_activities(
+    request: Request,
     current: Annotated[CurrentUser, Depends(verify_firebase_token)],
     service: Annotated[FirestoreService, Depends(get_firestore_service)],
     limit: int = Query(20, ge=1, le=50),
@@ -169,6 +175,7 @@ async def list_activities(
     """Return a page of the user's most recent activities.
 
     Args:
+        request: Incoming request (used by the rate limiter).
         current: The authenticated Firebase user.
         service: The Firestore persistence layer.
         limit: Maximum number of items per page (1-50, default 20).

@@ -14,7 +14,14 @@ from app.agents.factories import get_analyst_agent, get_coach_agent, get_logger_
 from app.agents.logger_agent import LoggerAgent
 from app.core.auth import CurrentUser, verify_firebase_token
 from app.core.config import get_settings
+from app.core.ratelimit import limiter as _global_limiter
 from app.services.firestore_service import FirestoreService, get_firestore_service
+
+# Rate limiting is module-level and shares state across every test in the
+# session — without this disable the suite would trip the default 30/minute
+# bucket after a handful of fast requests.  The dedicated rate-limit tests
+# (tests/test_ratelimit.py) re-enable the limiter under their own fixture.
+_global_limiter.enabled = False
 
 
 @pytest.fixture(autouse=True)
