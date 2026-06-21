@@ -138,7 +138,7 @@ as broken before the user has logged today. Always key IST-day buckets off
 
 ## ADR-008 — Gemini Flash for the Logger, Pro for Analyst & Coach
 
-**Status:** Accepted · *Source: DECISIONS.md §6*
+**Status:** Accepted; Coach later moved to Gemini 2.5 **Flash** (see DECISIONS.md §15 #31) · *Source: DECISIONS.md §6*
 
 **Context.** Logging is high-frequency and mostly structured extraction; analysis
 and coaching are low-frequency and reasoning-heavy. One model for both would

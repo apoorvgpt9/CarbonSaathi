@@ -180,7 +180,7 @@ flowchart TD
         LOG["Logger Agent<br/>Gemini 2.5 Flash"]
         ORCH["Insight Orchestrator"]
         AN["Analyst Agent<br/>Gemini 2.5 Pro"]
-        CO["Coach Agent<br/>Gemini 2.5 Pro"]
+        CO["Coach Agent<br/>Gemini 2.5 Flash"]
         EM["Emission Service<br/>grid · transport · food factors"]
         AUTH --> R
         R --> LOG
@@ -226,7 +226,7 @@ user-facing aggregation ("today", "this week", streaks) is computed in **IST**
 |---|---|---|---|
 | **Logger** | Gemini 2.5 **Flash** | Parse free-text into a typed activity via function calling | Cheap + fast for high-frequency logging; the "simple actions" half of the PS |
 | **Analyst** | Gemini 2.5 **Pro** | Find patterns/trends/milestones over a 14-day window | Higher reasoning quality for "personalized insights" |
-| **Coach** | Gemini 2.5 **Pro** | Propose `swap` / `reduce` / `challenge` recommendations | The "reduce" mandate, with **computed** savings |
+| **Coach** | Gemini 2.5 **Flash** | Propose `swap` / `reduce` / `challenge` recommendations | The "reduce" mandate, with **computed** savings; Flash is fast enough end-to-end and quality is acceptable on this workload (see [Limitations](#12-limitations)) |
 
 ```mermaid
 flowchart TD
@@ -238,7 +238,7 @@ flowchart TD
     AOUT -->|"empty / failed"| ASKIP["phase_complete: analyst<br/>coach skipped → done"]
     AOUT -->|"success"| AR["stream reasoning steps<br/>persist insights"]
     AR --> C1["emit phase_start: coach"]
-    C1 --> CO["Coach · Gemini Pro<br/>proposes swaps"]
+    C1 --> CO["Coach · Gemini Flash<br/>proposes swaps"]
     CO --> CC["validate saving_basis ·<br/>compute kg from emission_service"]
     CC --> CR2["stream reasoning steps<br/>persist recommendations"]
     CR2 --> DONE(["done: insights + recommendations"])
@@ -324,7 +324,8 @@ streak doesn't read as broken before you've logged today.
 | Backend | FastAPI (async, Pydantic v2) |
 | Frontend | Server-rendered Jinja2 + Tailwind (CDN) + vanilla ES-module JS, no build step |
 | AI — Logger | Gemini 2.5 Flash (function calling) |
-| AI — Analyst & Coach | Gemini 2.5 Pro |
+| AI — Analyst | Gemini 2.5 Pro |
+| AI — Coach | Gemini 2.5 Flash |
 | Database | Firestore (Spark free tier) |
 | Auth | Firebase Authentication — Google Sign-In |
 | Hosting | Cloud Run, `asia-south1` (low latency for Indian users) |
@@ -359,6 +360,16 @@ synthesised 404/422/500), `slowapi` rate limiting, secrets in Secret Manager, an
 
 > Full OWASP Top 10 (2021) walkthrough, control-by-control:
 > [SECURITY.md](./SECURITY.md).
+
+### Accessibility
+
+The UI follows WCAG AA: semantic HTML throughout (`<main>`, `<nav>`, `<header>`),
+ARIA roles and live regions on dynamic content (`role="alert"`, `aria-live` on
+the reasoning stream, `aria-label` on icon-only controls), `<label for>` on
+every form input, visible focus rings, an `sr-only` skip-to-main-content link,
+and `prefers-reduced-motion` respected (the 80 ms inter-event SSE delay still
+fires but card-entry transitions are disabled). Keyboard navigation works
+end-to-end without a mouse.
 
 ---
 
@@ -463,6 +474,11 @@ performative humility.
   without additional Firebase Management API quota (see DEPLOYMENT.md).
 - **Coverage is 99.68%, not 100%** — five defensive branches in
   `firestore_service.py` remain intentionally uncovered.
+- **Coach runs on Gemini 2.5 Flash, not Pro**, as a pragmatic
+  deploy-stability trade-off retained from the Phase 9 deploy window.
+  Recommendation quality is acceptable end-to-end but nominally bounded
+  below what Pro would produce; reverting to Pro is a single-line change
+  when desired.
 
 **Deliberately out of scope** (non-goals, not gaps): shopping/water/waste activity
 types, carbon-offset purchases, social/leaderboard features, multi-language UI,

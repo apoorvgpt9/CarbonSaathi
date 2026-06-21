@@ -61,7 +61,7 @@ Return ONLY JSON in this shape, with no prose:
 Keep titles short and descriptions to one or two sentences. Prefer the user's
 highest-emitting categories. Never invent activities or factors.
 """
-"""System instruction supplied to the Gemini Pro Coach model."""
+"""System instruction supplied to the Gemini Flash Coach model."""
 
 RESPONSE_SCHEMA: dict[str, Any] | None = None
 """No response schema: the ``saving_basis`` discriminated union exceeds Gemini's

@@ -244,12 +244,12 @@ CoachOutcome = Annotated[
 class CoachAgent(BaseAgent):
     """Proposes personalised carbon-reduction recommendations.
 
-    Gemini Pro proposes a typed ``saving_basis`` per recommendation; the agent
+    Gemini Flash proposes a typed ``saving_basis`` per recommendation; the agent
     computes the saving deterministically from the emission service.
 
     Args:
         emission_service: Provides emission-factor lookups for saving maths.
-        gemini_factory: Builds the configured Gemini Pro model.
+        gemini_factory: Builds the configured Gemini Flash model.
         user_state: Optional fallback state retained for callers that construct
             the agent per-user; the per-call ``profile.state`` is authoritative.
     """

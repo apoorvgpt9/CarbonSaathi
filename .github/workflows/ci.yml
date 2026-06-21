@@ -83,6 +83,16 @@ jobs:
         run: pip install -e ".[dev]"
 
       - name: pytest
+        env:
+          # Dummy, non-secret values so module-level get_settings() (e.g.
+          # app.core.ratelimit) can construct Settings during test collection
+          # when no .env file is present. The autouse _test_env fixture
+          # overrides these per test; no real secrets are used in CI.
+          GEMINI_API_KEY: test-gemini-key
+          FIREBASE_PROJECT_ID: test-project
+          FIREBASE_API_KEY: test-fb-api-key
+          FIREBASE_AUTH_DOMAIN: test.firebaseapp.com
+          FIREBASE_APP_ID: "1:test:web:test"
         run: pytest -v
 
       - name: Upload coverage report
