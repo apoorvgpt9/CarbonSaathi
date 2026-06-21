@@ -5,6 +5,7 @@ set -euo pipefail
 
 # ── Validate required env vars ────────────────────────────────────────────────
 : "${GCP_PROJECT_ID:?GCP_PROJECT_ID is required}"
+: "${FIREBASE_APP_ID:?FIREBASE_APP_ID is required (Firebase web-app appId, e.g. 1:PROJECT_NUM:web:HASH)}"
 GCP_REGION="${GCP_REGION:-asia-south1}"
 
 SERVICE_NAME="carbonsaathi"
@@ -73,7 +74,7 @@ gcloud run deploy "${SERVICE_NAME}" \
     --timeout=60s \
     --concurrency=80 \
     --service-account="${SA_EMAIL}" \
-    --set-env-vars="APP_ENV=production,LOG_LEVEL=INFO,FIREBASE_PROJECT_ID=${GCP_PROJECT_ID},FIREBASE_AUTH_DOMAIN=${GCP_PROJECT_ID}.firebaseapp.com,ALLOWED_ORIGINS=${ALLOWED_ORIGINS},RATE_LIMIT_PER_MINUTE=30" \
+    --set-env-vars="APP_ENV=production,LOG_LEVEL=INFO,FIREBASE_PROJECT_ID=${GCP_PROJECT_ID},FIREBASE_AUTH_DOMAIN=${GCP_PROJECT_ID}.firebaseapp.com,FIREBASE_APP_ID=${FIREBASE_APP_ID},ALLOWED_ORIGINS=${ALLOWED_ORIGINS},RATE_LIMIT_PER_MINUTE=30" \
     --set-secrets="GEMINI_API_KEY=gemini-api-key:latest,FIREBASE_API_KEY=firebase-api-key:latest" \
     --quiet
 
