@@ -1,4 +1,4 @@
-"""Coach agent: proposes carbon-reduction recommendations via Gemini 2.5 Pro.
+"""Coach agent: proposes carbon-reduction recommendations via Gemini 2.5 Flash.
 
 The :class:`CoachAgent` turns a user's profile, recent activities, and the
 Analyst's insights into :class:`~app.models.recommendation.Recommendation`
@@ -40,7 +40,7 @@ from app.models.user import IndianState, UserProfile
 from app.services.emission_service import EmissionService
 
 _GEMINI_TIMEOUT_S: Final[float] = 30.0
-"""Maximum seconds to await a single Gemini Pro generation before failing."""
+"""Maximum seconds to await a single Gemini Flash generation before failing."""
 
 _MAX_RECOMMENDATIONS: Final[int] = 3
 """Upper bound on recommendations returned from a single coaching pass."""

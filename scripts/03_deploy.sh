@@ -35,7 +35,9 @@ else
 fi
 
 echo "  Binding IAM roles (idempotent)..."
-for ROLE in roles/datastore.user roles/secretmanager.secretAccessor roles/logging.logWriter; do
+# firebaseauth.viewer is required because verify_id_token(..., check_revoked=True)
+# calls the Firebase Auth admin getUser API, which needs firebaseauth.users.get.
+for ROLE in roles/datastore.user roles/secretmanager.secretAccessor roles/logging.logWriter roles/firebaseauth.viewer; do
     gcloud projects add-iam-policy-binding "${GCP_PROJECT_ID}" \
         --member="serviceAccount:${SA_EMAIL}" \
         --role="${ROLE}" \
