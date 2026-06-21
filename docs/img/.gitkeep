@@ -1,0 +1,7 @@
+# Screenshots for the README live here.
+#
+# Expected files (referenced by ../../README.md):
+#   dashboard.png               — Dashboard: today's footprint, 7-day window, streak
+#   insights-reasoning-sse.png  — Insights page mid-generation, reasoning steps streaming (the hero shot)
+#
+# Capture from the live deployment: https://carbonsaathi-ahkpdce5pa-el.a.run.app

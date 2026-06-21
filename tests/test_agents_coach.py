@@ -90,7 +90,7 @@ def _profile(state: str) -> UserProfile:
 
 def _make_model(mock: dict[str, Any]) -> MagicMock:
     model = MagicMock()
-    model.model_name = "models/gemini-2.5-pro"
+    model.model_name = "models/gemini-2.5-flash"
     kind = mock["kind"]
     if kind == "raise":
         exc_type = {"TimeoutError": TimeoutError, "RuntimeError": RuntimeError}[mock["exception"]]
@@ -107,7 +107,7 @@ def _make_model(mock: dict[str, Any]) -> MagicMock:
 def _make_agent(mock: dict[str, Any]) -> tuple[CoachAgent, MagicMock]:
     model = _make_model(mock)
     factory = MagicMock()
-    factory.pro.return_value = model
+    factory.flash.return_value = model
     return CoachAgent(emission_service=_SERVICE, gemini_factory=factory), model
 
 
@@ -151,7 +151,7 @@ async def test_coach_golden(path: Path) -> None:
             assert reasoning is not None
             assert reasoning.agent_name == "coach"
             assert reasoning.prompt_version == "coach-v1"
-            assert reasoning.model == "models/gemini-2.5-pro"
+            assert reasoning.model == "models/gemini-2.5-flash"
             assert reasoning.reasoning_steps
             assert reasoning.latency_ms >= 0
         if "reasoning_contains" in expect:
@@ -310,9 +310,9 @@ async def test_coach_not_onboarded_returns_empty() -> None:
 
 def test_coach_constructor_user_state_stored() -> None:
     model = MagicMock()
-    model.model_name = "models/gemini-2.5-pro"
+    model.model_name = "models/gemini-2.5-flash"
     factory = MagicMock()
-    factory.pro.return_value = model
+    factory.flash.return_value = model
     agent = CoachAgent(
         emission_service=_SERVICE,
         gemini_factory=factory,

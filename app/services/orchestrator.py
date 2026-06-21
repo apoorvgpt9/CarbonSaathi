@@ -35,7 +35,7 @@ _logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 _RECENT_LIMIT: Final[int] = 10
 """How many cached insights/recommendations to return on the fresh-cache path."""
 
-_ACTIVITY_WINDOW_DAYS: Final[int] = 14
+_ACTIVITY_WINDOW_DAYS: Final[int] = 3
 """Trailing window (days) of activities fed to the Analyst and Coach."""
 
 _ACTIVITY_FETCH_LIMIT: Final[int] = 200

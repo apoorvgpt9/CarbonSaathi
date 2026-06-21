@@ -34,7 +34,7 @@ from app.models.activity import Activity
 from app.models.insight import Insight, InsightType
 from app.models.shared import AgentReasoning
 
-_GEMINI_TIMEOUT_S: Final[float] = 15.0
+_GEMINI_TIMEOUT_S: Final[float] = 30.0
 """Maximum seconds to await a single Gemini Pro generation before failing."""
 
 MIN_ACTIVITIES_FOR_INSIGHTS: Final[int] = 3

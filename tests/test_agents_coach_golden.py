@@ -107,7 +107,7 @@ def _pro_json_model(payload: dict[str, Any]) -> MagicMock:
         A :class:`unittest.mock.MagicMock` mimicking Gemini Pro.
     """
     model = MagicMock()
-    model.model_name = "models/gemini-2.5-pro"
+    model.model_name = "models/gemini-2.5-flash"
     model.generate_content_async = AsyncMock(return_value=SimpleNamespace(text=json.dumps(payload)))
     return model
 
@@ -122,7 +122,7 @@ def _make_agent(model: MagicMock) -> CoachAgent:
         A :class:`CoachAgent` wired to the mock and the real emission service.
     """
     factory = MagicMock()
-    factory.pro.return_value = model
+    factory.flash.return_value = model
     return CoachAgent(emission_service=_SERVICE, gemini_factory=factory)
 
 

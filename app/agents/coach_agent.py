@@ -39,7 +39,7 @@ from app.models.shared import AgentReasoning
 from app.models.user import IndianState, UserProfile
 from app.services.emission_service import EmissionService
 
-_GEMINI_TIMEOUT_S: Final[float] = 20.0
+_GEMINI_TIMEOUT_S: Final[float] = 30.0
 """Maximum seconds to await a single Gemini Pro generation before failing."""
 
 _MAX_RECOMMENDATIONS: Final[int] = 3
@@ -261,8 +261,8 @@ class CoachAgent(BaseAgent):
         gemini_factory: GenerativeModelFactory,
         user_state: IndianState | None = None,
     ) -> None:
-        """Build and cache the configured Pro model and JSON generation config."""
-        model = gemini_factory.pro(system_instruction=SYSTEM_INSTRUCTION)
+        """Build and cache the configured Flash model and JSON generation config."""
+        model = gemini_factory.flash(system_instruction=SYSTEM_INSTRUCTION)
         super().__init__(prompt_version=PROMPT_VERSION, model_name=str(model.model_name))
         self._model = model
         self._emission_service = emission_service
